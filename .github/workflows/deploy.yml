@@ -41,3 +41,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: .output/public
           cname: aliaplan.zooxsmart.com
+          force_orphan: true
