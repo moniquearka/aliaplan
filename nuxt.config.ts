@@ -5,6 +5,7 @@ export default defineNuxtConfig({
   // Geração estática para GitHub Pages com domínio customizado
   ssr: false,
   modules: ['@pinia/nuxt'],
+  // assets/ está em app/assets/ (srcDir do Nuxt 4), ~ aponta para app/
   css: ['~/assets/css/main.css'],
   vite: {
     server: {
