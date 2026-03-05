@@ -4,11 +4,17 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   // Geração estática para GitHub Pages
   ssr: false,
-  // Base URL para GitHub Pages: moniquearka.github.io/aliaplan/
-  // Quando o domínio customizado aliaplan.zooxsmart.com estiver ativo,
-  // o baseURL pode ser alterado para '/'
+  // Base URL: usa variável de ambiente NUXT_APP_BASE_URL
+  // No GitHub Actions: NUXT_APP_BASE_URL=/aliaplan/
+  // Em desenvolvimento: não definida (usa '/')
   app: {
     baseURL: process.env.NUXT_APP_BASE_URL || '/aliaplan/',
+    head: {
+      title: 'ALIA - Jornada de Vida',
+      link: [
+        { rel: 'icon', type: 'image/png', href: '/favicon.png' },
+      ],
+    },
   },
   modules: ['@pinia/nuxt'],
   // assets/ está em app/assets/ (srcDir do Nuxt 4), ~ aponta para app/

@@ -54,81 +54,13 @@ function visaoLongoPrazo(): string {
   return last?.descricao || ''
 }
 
-// ── PDF generation ─────────────────────────────────────────────────────────────
+// ── Salvar Estudo ─────────────────────────────────────────────────────────────
 async function handleSalvar() {
   isGenerating.value = true
   try {
-    const { toPng } = await import('html-to-image')
-    const CAPTURE_WIDTH_PX = 800
-
-    // Capturar todos os grupos em uma única imagem longa
-    const allGroups = [
-      pdfGroup1Ref.value,
-      pdfGroup2Ref.value,
-      pdfGroup3Ref.value,
-      pdfGroup4Ref.value,
-    ].filter(Boolean) as HTMLElement[]
-
-    // Criar container temporário para capturar tudo junto
-    const container = document.createElement('div')
-    container.style.cssText = [
-      `width:${CAPTURE_WIDTH_PX}px`,
-      'background:#f8fafc',
-      'padding:24px',
-      'font-family:Inter,sans-serif',
-      'display:flex',
-      'flex-direction:column',
-      'gap:16px',
-    ].join(';')
-
-    // Cabeçalho com logo
-    const header = document.createElement('div')
-    header.style.cssText = 'display:flex;justify-content:flex-end;padding-bottom:12px;border-bottom:2px solid #e2e8f0;margin-bottom:4px'
-    const logoImg = document.createElement('img')
-    logoImg.src = `data:image/png;base64,${ALIA_LOGO_BASE64}`
-    logoImg.alt = 'ALIA'
-    logoImg.style.cssText = 'height:32px;width:auto;object-fit:contain'
-    header.appendChild(logoImg)
-    container.appendChild(header)
-
-    // Clonar cada grupo
-    for (const group of allGroups) {
-      const clone = group.cloneNode(true) as HTMLElement
-      clone.style.width = `${CAPTURE_WIDTH_PX - 48}px`
-      clone.style.background = '#ffffff'
-      clone.style.borderRadius = '8px'
-      clone.style.padding = '16px'
-      clone.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)'
-      container.appendChild(clone)
-    }
-
-    document.body.appendChild(container)
-    const dataUrl = await toPng(container, {
-      pixelRatio: 2,
-      backgroundColor: '#f8fafc',
-      width: CAPTURE_WIDTH_PX,
-      skipFonts: true,
-      cacheBust: true,
-    })
-    document.body.removeChild(container)
-
-    // Fazer download do backup como PNG
-    const now = new Date()
-    const dd = String(now.getDate()).padStart(2, '0')
-    const mm = String(now.getMonth() + 1).padStart(2, '0')
-    const aa = String(now.getFullYear()).slice(-2)
-    const nomeArquivo = `Estudo_${proponente.value.nomeCompleto || 'Proponente'}_${dd}${mm}${aa}.png`
-    const link = document.createElement('a')
-    link.href = dataUrl
-    link.download = nomeArquivo
-    link.click()
-
-    // Aguardar um momento e redirecionar para a página de estudos gerados
-    await new Promise(resolve => setTimeout(resolve, 800))
-    window.open('https://moniquearka.github.io/nura-app/estudos-gerados', '_blank')
+    window.open('https://moniquearka.github.io/nura-app/estudos-gerados/', '_blank')
   } catch (err) {
     console.error('Erro ao salvar estudo:', err)
-    alert('Erro ao salvar o estudo. Verifique o console para detalhes.')
   } finally {
     isGenerating.value = false
   }
@@ -147,14 +79,15 @@ function calcCapitalSegurado(cob: Cobertura): string {
 <template>
   <div>
     <!-- Header -->
-    <div :style="{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }">
-      <div :style="{ display: 'flex', alignItems: 'center', gap: '12px' }">
-        <div :style="{ width: '36px', height: '36px', borderRadius: '50%', background: 'oklch(95% 0.005 260)', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
-          <svg class="h-4 w-4" :style="{ color: 'oklch(45% 0.02 250)' }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-          </svg>
-        </div>
-        <h1 :style="{ fontSize: '20px', fontWeight: 600, color: 'oklch(20% 0.05 250)' }">Revisão do Estudo</h1>
+    <div :style="{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }">
+      <div :style="{ width: '36px', height: '36px', borderRadius: '50%', background: 'oklch(95% 0.005 260)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }">
+        <svg :style="{ width: '16px', height: '16px', color: 'oklch(45% 0.02 250)' }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div>
+        <h1 :style="{ fontSize: '20px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: 0 }">Revisão do Estudo</h1>
+        <p :style="{ fontSize: '12px', color: 'oklch(55% 0.02 250)', marginTop: '2px', marginBottom: 0 }">Confirme todas as informações antes de finalizar. Esta tela é somente leitura.</p>
       </div>
     </div>
 
@@ -172,12 +105,15 @@ function calcCapitalSegurado(cob: Cobertura): string {
           <h3 :style="{ fontSize: '15px', fontWeight: 600, color: 'oklch(20% 0.05 250)', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid oklch(90% 0.005 260)' }">Dados do Proponente</h3>
           <div :style="{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }">
             <div v-for="item in [
-              { label: 'Nome Completo', value: proponente.nomeCompleto },
               { label: 'CPF', value: proponente.cpf },
+              { label: 'Nome Completo', value: proponente.nomeCompleto },
+              { label: 'Nome Social', value: proponente.nomeSocial || '—' },
               { label: 'Data de Nascimento', value: proponente.dataNascimento },
-              { label: 'Profissão', value: proponente.profissao },
+              { label: 'Telefone', value: proponente.telefone },
+              { label: 'E-mail', value: proponente.email },
               { label: 'Renda Mensal', value: proponente.rendaMensal },
-              { label: 'Estado Civil', value: proponente.estadoCivil },
+              { label: 'Ocupação', value: proponente.ocupacao },
+              { label: 'Empresa', value: proponente.empresa },
             ]" :key="item.label">
               <span :style="{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'oklch(55% 0.02 250)', display: 'block', marginBottom: '2px' }">{{ item.label }}</span>
               <p :style="{ fontSize: '14px', color: 'oklch(20% 0.05 250)', margin: 0 }">{{ item.value || '—' }}</p>
@@ -189,13 +125,13 @@ function calcCapitalSegurado(cob: Cobertura): string {
         <div :style="{ background: '#fff', border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', padding: '24px', marginBottom: '12px' }">
           <h3 :style="{ fontSize: '15px', fontWeight: 600, color: 'oklch(20% 0.05 250)', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid oklch(90% 0.005 260)' }">Perfil de Personalidade</h3>
           <div :style="{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }">
-            <div v-for="item in [
-              { label: 'Perfil', value: resumoData.perfil.tipo },
-              { label: 'Tolerância ao Risco', value: resumoData.perfil.toleranciaRisco },
-              { label: 'Horizonte de Investimento', value: resumoData.perfil.horizonte },
-            ]" :key="item.label">
-              <span :style="{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'oklch(55% 0.02 250)', display: 'block', marginBottom: '2px' }">{{ item.label }}</span>
-              <p :style="{ fontSize: '14px', color: 'oklch(20% 0.05 250)', margin: 0 }">{{ item.value || '—' }}</p>
+            <div>
+              <span :style="{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'oklch(55% 0.02 250)', display: 'block', marginBottom: '2px' }">Tipo de Perfil</span>
+              <p :style="{ fontSize: '14px', color: 'oklch(20% 0.05 250)', margin: 0 }">{{ resumoData.perfil.tipo || '—' }}</p>
+            </div>
+            <div>
+              <span :style="{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'oklch(55% 0.02 250)', display: 'block', marginBottom: '2px' }">Descrição</span>
+              <p :style="{ fontSize: '14px', color: 'oklch(20% 0.05 250)', margin: 0 }">{{ resumoData.perfil.descricao || '—' }}</p>
             </div>
           </div>
         </div>
@@ -203,8 +139,8 @@ function calcCapitalSegurado(cob: Cobertura): string {
         <!-- Cenários de Risco Atual -->
         <div :style="{ background: '#fff', border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', padding: '24px', marginBottom: '12px' }">
           <h3 :style="{ fontSize: '15px', fontWeight: 600, color: 'oklch(20% 0.05 250)', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid oklch(90% 0.005 260)' }">Cenários de Risco Atual</h3>
-          <div :style="{ background: 'oklch(97% 0.01 25)', border: '1px solid oklch(88% 0.05 25)', borderRadius: '8px', padding: '14px 16px' }">
-            <p :style="{ fontSize: '13px', fontWeight: 600, color: '#1e40af', marginBottom: '8px' }">{{ resumoData.cenario.titulo }}</p>
+          <div :style="{ background: '#eff6ff', border: '1px solid #dbeafe', borderRadius: '8px', padding: '12px 16px' }">
+            <p :style="{ fontSize: '13px', fontWeight: 600, color: 'oklch(20% 0.05 250)', marginBottom: '8px', marginTop: 0 }">{{ resumoData.cenario.titulo }}</p>
             <ul :style="{ display: 'flex', flexDirection: 'column', gap: '4px', listStyle: 'none', padding: 0, margin: 0 }">
               <li v-for="(item, i) in resumoData.cenario.itens" :key="i" :style="{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', color: '#1e40af' }">
                 <span :style="{ marginTop: '6px', width: '6px', height: '6px', borderRadius: '50%', background: '#1e40af', flexShrink: 0, display: 'inline-block' }"></span>
@@ -470,13 +406,7 @@ function calcCapitalSegurado(cob: Cobertura): string {
     <!-- Navigation -->
     <div :style="{ display: 'flex', justifyContent: 'flex-end', paddingTop: '8px', paddingBottom: '16px' }">
       <button @click="handleSalvar()" :disabled="isGenerating"
-        :style="{ display: 'flex', alignItems: 'center', gap: '8px', background: isGenerating ? 'oklch(55% 0.02 250)' : 'oklch(20% 0.05 250)', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, border: 'none', cursor: isGenerating ? 'not-allowed' : 'pointer' }">
-        <svg v-if="isGenerating" class="h-4 w-4" :style="{ animation: 'spin 1s linear infinite' }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-        <svg v-else class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
-        </svg>
+        :style="{ background: isGenerating ? 'oklch(55% 0.02 250)' : 'oklch(20% 0.05 250)', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, border: 'none', cursor: isGenerating ? 'not-allowed' : 'pointer' }">
         {{ isGenerating ? 'Salvando...' : 'Salvar Estudo' }}
       </button>
     </div>

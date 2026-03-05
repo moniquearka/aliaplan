@@ -5,7 +5,7 @@ import { FUNDOS_DISPONIVEIS, HORIZONTE_VALORES, HORIZONTE_COBERTURAS, HORIZONTE_
 import type { Plano, SubPlano, Cobertura, FundoSelecionado } from '~/stores/jornada'
 
 const props = defineProps<{ onBack?: () => void; onNext?: () => void }>()
-const emit = defineEmits<{ back: []; next: [] }>()
+const emit = defineEmits<{ back: []; next: []; 'editing-change': [editing: boolean] }>()
 
 const store = useJornadaStore()
 const isEditing = ref(false)
@@ -83,10 +83,12 @@ function redistributePercentuais(fundos: FundoSelecionado[], contribuicaoMensal:
 function handleEdit() {
   draft.value = JSON.parse(JSON.stringify(store.detalhamentoData))
   isEditing.value = true
+  emit('editing-change', true)
 }
 function handleCancel() {
   isEditing.value = false
   editActionDone.value = true
+  emit('editing-change', false)
 }
 function handleSave() {
   // Validar soma dos percentuais
@@ -105,6 +107,7 @@ function handleSave() {
   store.saveDetalhamentoData(draft.value)
   isEditing.value = false
   editActionDone.value = true
+  emit('editing-change', false)
 }
 
 // ── Plano operations ──────────────────────────────────────────────────────────

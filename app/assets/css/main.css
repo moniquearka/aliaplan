@@ -58,6 +58,16 @@ input, select, textarea {
   font-family: var(--font-sans);
 }
 
+/* ── Section Card ────────────────────────────────────────────────────────── */
+.section-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+}
+
 /* ── Utility classes ──────────────────────────────────────────────────────── */
 .page-content {
   padding: 24px;
@@ -752,4 +762,102 @@ input, select, textarea {
   border-radius: 6px;
   font-size: 13px;
   color: #166534;
+}
+
+/* ── Inline edit inputs (modo editável) ───────────────────────────────────── */
+.inline-edit {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+  background: #f8fafc;
+  color: #0f172a;
+  outline: none;
+  font-family: var(--font-sans);
+  transition: border-color 0.15s;
+}
+.inline-edit:focus {
+  border-color: #94a3b8;
+  background: #fff;
+}
+/* Select estilizado igual ao inline-edit */
+select.inline-edit {
+  appearance: auto;
+  -webkit-appearance: auto;
+  cursor: pointer;
+  background-color: #f8fafc;
+  padding-right: 24px;
+}
+select.inline-edit:focus {
+  border-color: #94a3b8;
+  background: #fff;
+}
+.textarea-edit {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  background: #f8fafc;
+  color: #0f172a;
+  outline: none;
+  resize: vertical;
+  font-family: var(--font-sans);
+  transition: border-color 0.15s;
+}
+.textarea-edit:focus {
+  border-color: #94a3b8;
+  background: #fff;
+}
+/* ── Section card ─────────────────────────────────────────────────────────── */
+.section-card {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+  margin-bottom: 16px;
+  padding: 20px 24px;
+}
+
+/* ── Campo editável do DetalhamentoPlano ─────────────────────────────────── */
+.field-input {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+  color: #0f172a;
+  background: #f8fafc;
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: var(--font-sans);
+  box-sizing: border-box;
+}
+.field-input:focus {
+  border-color: #94a3b8;
+  background: #fff;
+}
+.field-input::placeholder {
+  color: #94a3b8;
+}
+
+.field-select {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+  color: #0f172a;
+  background: #f8fafc;
+  outline: none;
+  cursor: pointer;
+  appearance: auto;
+  font-family: var(--font-sans);
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.field-select:focus {
+  border-color: #94a3b8;
+  background: #fff;
 }

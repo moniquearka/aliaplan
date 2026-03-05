@@ -352,7 +352,7 @@ import { ref, computed } from 'vue'
 import { useJornadaStore } from '~/stores/jornada'
 import type { ResumoData } from '~/stores/jornada'
 
-const emit = defineEmits<{ next: [] }>()
+const emit = defineEmits<{ next: []; 'editing-change': [editing: boolean] }>()
 
 const store = useJornadaStore()
 
@@ -384,16 +384,19 @@ const handleEdit = () => {
   draft.value = JSON.parse(JSON.stringify(store.resumoData))
   draftProponente.value = { ...store.detalhamentoData.proponente }
   isEditing.value = true
+  emit('editing-change', true)
 }
 
 const handleCancel = () => {
   isEditing.value = false
+  emit('editing-change', false)
 }
 
 const handleSave = () => {
   store.saveResumoData(draft.value)
   store.saveDetalhamentoData({ ...store.detalhamentoData, proponente: draftProponente.value })
   isEditing.value = false
+  emit('editing-change', false)
 }
 
 const handleContinuar = () => {
