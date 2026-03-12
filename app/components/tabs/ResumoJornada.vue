@@ -29,7 +29,16 @@
           <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
         </svg>
       </template>
+      <!-- Nova ordem:
+        Linha 1: CPF | Nome Completo | Nome Social
+        Linha 2: Data de Nascimento | Gênero | Telefone
+        Linha 3 (sem OUTROS): E-mail | Profissão | Renda Mensal
+        Linha 4 (sem OUTROS): Empresa
+        Linha 3 (com OUTROS): E-mail | Profissão | Especificação da Profissão
+        Linha 4 (com OUTROS): Renda Mensal | Empresa
+      -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px 24px;align-items:start">
+        <!-- Linha 1 -->
         <div>
           <p class="field-label">CPF <span style="color:#dc2626">*</span></p>
           <input v-if="isEditing" v-model="draftProponente.cpf" class="inline-edit" />
@@ -45,25 +54,33 @@
           <input v-if="isEditing" v-model="draftProponente.nomeSocial" class="inline-edit" />
           <p v-else class="field-value">{{ proponente.nomeSocial || '—' }}</p>
         </div>
+        <!-- Linha 2 -->
         <div>
           <p class="field-label">Data de Nascimento <span style="color:#dc2626">*</span></p>
           <input v-if="isEditing" type="date" v-model="draftProponente.dataNascimento" class="inline-edit" />
           <p v-else class="field-value">{{ formatDate(proponente.dataNascimento) }}</p>
         </div>
         <div>
+          <p class="field-label">Gênero</p>
+          <select v-if="isEditing" v-model="draftProponente.genero" class="inline-edit" style="cursor:pointer">
+            <option value="">Selecione...</option>
+            <option value="Feminino">Feminino</option>
+            <option value="Masculino">Masculino</option>
+            <option value="Não-binário">Não-binário</option>
+            <option value="Prefiro não informar">Prefiro não informar</option>
+          </select>
+          <p v-else class="field-value">{{ proponente.genero || '—' }}</p>
+        </div>
+        <div>
           <p class="field-label">Telefone <span style="color:#dc2626">*</span></p>
           <input v-if="isEditing" v-model="draftProponente.telefone" class="inline-edit" />
           <p v-else class="field-value">{{ proponente.telefone || '—' }}</p>
         </div>
+        <!-- Linha 3: E-mail | Profissão | (Especificação da Profissão se OUTROS, senão Renda Mensal) -->
         <div>
           <p class="field-label">E-mail <span style="color:#dc2626">*</span></p>
           <input v-if="isEditing" v-model="draftProponente.email" class="inline-edit" />
           <p v-else class="field-value">{{ proponente.email || '—' }}</p>
-        </div>
-        <div>
-          <p class="field-label">Renda Mensal <span style="color:#dc2626">*</span></p>
-          <input v-if="isEditing" v-model="draftProponente.rendaMensal" class="inline-edit" />
-          <p v-else class="field-value">{{ proponente.rendaMensal || '—' }}</p>
         </div>
         <div style="position:relative">
           <p class="field-label">Profissão</p>
@@ -90,34 +107,33 @@
           </template>
           <p v-else class="field-value">{{ proponente.ocupacao || '—' }}</p>
         </div>
-        <!-- Gênero -->
-        <div>
-          <p class="field-label">Gênero</p>
-          <select v-if="isEditing" v-model="draftProponente.genero" class="inline-edit" style="cursor:pointer">
-            <option value="">Selecione...</option>
-            <option value="Feminino">Feminino</option>
-            <option value="Masculino">Masculino</option>
-            <option value="Não-binário">Não-binário</option>
-            <option value="Prefiro não informar">Prefiro não informar</option>
-          </select>
-          <p v-else class="field-value">{{ proponente.genero || '—' }}</p>
-        </div>
-        <!-- Especificação da Ocupação (quando OUTROS) - ocupa a 3ª coluna no lugar de Empresa -->
+        <!-- 3ª coluna da linha 3: Especificação da Profissão (se OUTROS) ou Renda Mensal -->
         <template v-if="(isEditing ? draftProponente.ocupacao : proponente.ocupacao) === 'OUTROS (ESPECIFICAR)'">
           <div>
-            <p class="field-label">Especificação da Ocupação <span style="color:#dc2626">*</span></p>
-            <input v-if="isEditing" v-model="draftProponente.especificacaoOcupacao" class="inline-edit" placeholder="Descreva a ocupação..." />
+            <p class="field-label">Especificação da Profissão <span style="color:#dc2626">*</span></p>
+            <input v-if="isEditing" v-model="draftProponente.especificacaoOcupacao" class="inline-edit" placeholder="Descreva a profissão..." />
             <p v-else class="field-value">{{ proponente.especificacaoOcupacao || '—' }}</p>
           </div>
-          <!-- Empresa aparece na linha seguinte quando OUTROS está selecionado -->
-          <div style="grid-column: 1">
+          <!-- Linha 4 (com OUTROS): Renda Mensal | Empresa -->
+          <div>
+            <p class="field-label">Renda Mensal <span style="color:#dc2626">*</span></p>
+            <input v-if="isEditing" v-model="draftProponente.rendaMensal" class="inline-edit" />
+            <p v-else class="field-value">{{ proponente.rendaMensal || '—' }}</p>
+          </div>
+          <div>
             <p class="field-label">Empresa</p>
             <input v-if="isEditing" v-model="draftProponente.empresa" class="inline-edit" />
             <p v-else class="field-value">{{ proponente.empresa || '—' }}</p>
           </div>
         </template>
-        <!-- Quando não é OUTROS, Empresa fica na 3ª coluna da mesma linha -->
         <template v-else>
+          <!-- 3ª coluna linha 3: Renda Mensal -->
+          <div>
+            <p class="field-label">Renda Mensal <span style="color:#dc2626">*</span></p>
+            <input v-if="isEditing" v-model="draftProponente.rendaMensal" class="inline-edit" />
+            <p v-else class="field-value">{{ proponente.rendaMensal || '—' }}</p>
+          </div>
+          <!-- Linha 4 (sem OUTROS): Empresa -->
           <div>
             <p class="field-label">Empresa</p>
             <input v-if="isEditing" v-model="draftProponente.empresa" class="inline-edit" />

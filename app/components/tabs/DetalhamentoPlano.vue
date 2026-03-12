@@ -14,6 +14,23 @@ const editActionDone = ref(false)
 
 const data = computed(() => isEditing.value ? draft.value : store.detalhamentoData)
 
+// ── Tooltip customizado para coberturas ──────────────────────────────────────
+const tooltipVisible = ref(false)
+const tooltipText = ref('')
+const tooltipX = ref(0)
+const tooltipY = ref(0)
+function showTooltip(event: MouseEvent, text: string) {
+  const el = event.currentTarget as HTMLElement
+  const rect = el.getBoundingClientRect()
+  tooltipText.value = text
+  tooltipX.value = rect.left + rect.width / 2
+  tooltipY.value = rect.top - 8
+  tooltipVisible.value = true
+}
+function hideTooltip() {
+  tooltipVisible.value = false
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function riscoCorParaLabel(cor: string): string {
   const mapa: Record<string, string> = {
@@ -860,10 +877,15 @@ const continuerDisabled = computed(() => isEditing.value)
                     <option value="">Selecione...</option>
                     <option v-for="nome in HORIZONTE_NOMES" :key="nome" :value="nome">{{ nome }}</option>
                   </select>
-                  <!-- Modo visualização: nome com ícone de info tooltip -->
+                  <!-- Modo visualização: nome com ícone de info tooltip customizado -->
                   <span v-else :style="{ display: 'flex', alignItems: 'flex-start', gap: '4px' }">
                     <span :style="{ display: 'block', whiteSpace: 'normal', wordBreak: 'break-word', fontSize: '11px' }">{{ cob.nome }}</span>
-                    <span v-if="COBERTURA_TOOLTIPS[cob.nome]" :title="COBERTURA_TOOLTIPS[cob.nome]" :style="{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '14px', height: '14px', borderRadius: '50%', border: '1px solid oklch(75% 0.01 260)', fontSize: '9px', color: 'oklch(55% 0.02 250)', cursor: 'help', flexShrink: 0, marginTop: '1px' }">i</span>
+                    <span
+                      v-if="COBERTURA_TOOLTIPS[cob.nome]"
+                      @mouseenter="(e) => showTooltip(e as MouseEvent, COBERTURA_TOOLTIPS[cob.nome])"
+                      @mouseleave="hideTooltip"
+                      :style="{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '14px', height: '14px', borderRadius: '50%', border: '1px solid oklch(60% 0.02 250)', fontSize: '9px', fontWeight: 700, color: 'oklch(45% 0.02 250)', cursor: 'help', flexShrink: 0, marginTop: '1px', background: 'oklch(96% 0.005 260)' }"
+                    >i</span>
                   </span>
                 </td>
                 <td :style="{ padding: '10px 6px', textAlign: 'center', fontSize: '11px', whiteSpace: 'nowrap' }">
@@ -945,5 +967,34 @@ const continuerDisabled = computed(() => isEditing.value)
         </svg>
       </button>
     </div>
+
+    <!-- Tooltip customizado para coberturas -->
+    <Teleport to="body">
+      <div
+        v-if="tooltipVisible"
+        :style="{
+          position: 'fixed',
+          left: tooltipX + 'px',
+          top: tooltipY + 'px',
+          transform: 'translate(-50%, -100%)',
+          background: 'oklch(15% 0.04 250)',
+          color: '#fff',
+          padding: '10px 14px',
+          borderRadius: '8px',
+          fontSize: '12px',
+          lineHeight: '1.5',
+          maxWidth: '320px',
+          zIndex: 9999,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+          pointerEvents: 'none',
+          whiteSpace: 'normal',
+          wordBreak: 'break-word',
+        }"
+      >
+        {{ tooltipText }}
+        <!-- Seta apontando para baixo -->
+        <div :style="{ position: 'absolute', bottom: '-6px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid oklch(15% 0.04 250)' }" />
+      </div>
+    </Teleport>
   </div>
 </template>
