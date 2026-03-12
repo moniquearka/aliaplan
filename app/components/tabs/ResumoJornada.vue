@@ -66,7 +66,7 @@
           <p v-else class="field-value">{{ proponente.rendaMensal || '—' }}</p>
         </div>
         <div style="position:relative">
-          <p class="field-label">Ocupação</p>
+          <p class="field-label">Profissão</p>
           <template v-if="isEditing">
             <input
               v-model="ocupacaoSearch"
@@ -89,6 +89,18 @@
             </div>
           </template>
           <p v-else class="field-value">{{ proponente.ocupacao || '—' }}</p>
+        </div>
+        <!-- Gênero -->
+        <div>
+          <p class="field-label">Gênero</p>
+          <select v-if="isEditing" v-model="draftProponente.genero" class="inline-edit" style="cursor:pointer">
+            <option value="">Selecione...</option>
+            <option value="Feminino">Feminino</option>
+            <option value="Masculino">Masculino</option>
+            <option value="Não-binário">Não-binário</option>
+            <option value="Prefiro não informar">Prefiro não informar</option>
+          </select>
+          <p v-else class="field-value">{{ proponente.genero || '—' }}</p>
         </div>
         <!-- Especificação da Ocupação (quando OUTROS) - ocupa a 3ª coluna no lugar de Empresa -->
         <template v-if="(isEditing ? draftProponente.ocupacao : proponente.ocupacao) === 'OUTROS (ESPECIFICAR)'">

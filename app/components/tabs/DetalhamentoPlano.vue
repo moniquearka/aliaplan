@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useJornadaStore } from '~/stores/jornada'
-import { FUNDOS_DISPONIVEIS, HORIZONTE_VALORES, HORIZONTE_COBERTURAS, HORIZONTE_NOMES, VIGENCIA_OPTIONS } from '~/data/fundosData'
+import { FUNDOS_DISPONIVEIS, HORIZONTE_VALORES, HORIZONTE_COBERTURAS, HORIZONTE_NOMES, VIGENCIA_OPTIONS, PRAZO_PAGAMENTO_OPTIONS, COBERTURA_TOOLTIPS } from '~/data/fundosData'
 import type { Plano, SubPlano, Cobertura, FundoSelecionado } from '~/stores/jornada'
 
 const props = defineProps<{ onBack?: () => void; onNext?: () => void }>()
@@ -849,7 +849,7 @@ const continuerDisabled = computed(() => isEditing.value)
                 <th :style="{ textAlign: 'center', padding: '8px 6px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Vigência</th>
                 <th :style="{ textAlign: 'center', padding: '8px 6px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Prazo de Pagamento</th>
                 <th :style="{ textAlign: 'right', padding: '8px 6px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Capital Segurado</th>
-                <th :style="{ textAlign: 'right', padding: '8px 16px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Contribuição Mensal</th>
+                <th :style="{ textAlign: 'right', padding: '8px 16px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Prêmio</th>
                 <th v-if="isEditing" :style="{ padding: '8px 4px' }"></th>
               </tr>
             </thead>
@@ -860,7 +860,11 @@ const continuerDisabled = computed(() => isEditing.value)
                     <option value="">Selecione...</option>
                     <option v-for="nome in HORIZONTE_NOMES" :key="nome" :value="nome">{{ nome }}</option>
                   </select>
-                  <span v-else :style="{ display: 'block', whiteSpace: 'normal', wordBreak: 'break-word', fontSize: '11px' }">{{ cob.nome }}</span>
+                  <!-- Modo visualização: nome com ícone de info tooltip -->
+                  <span v-else :style="{ display: 'flex', alignItems: 'flex-start', gap: '4px' }">
+                    <span :style="{ display: 'block', whiteSpace: 'normal', wordBreak: 'break-word', fontSize: '11px' }">{{ cob.nome }}</span>
+                    <span v-if="COBERTURA_TOOLTIPS[cob.nome]" :title="COBERTURA_TOOLTIPS[cob.nome]" :style="{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '14px', height: '14px', borderRadius: '50%', border: '1px solid oklch(75% 0.01 260)', fontSize: '9px', color: 'oklch(55% 0.02 250)', cursor: 'help', flexShrink: 0, marginTop: '1px' }">i</span>
+                  </span>
                 </td>
                 <td :style="{ padding: '10px 6px', textAlign: 'center', fontSize: '11px', whiteSpace: 'nowrap' }">
                   <select v-if="isEditing" :value="cob.vigencia" @change="(e) => updateCobertura(plano, i, 'vigencia', (e.target as HTMLSelectElement).value)" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '4px 4px', fontSize: '11px', background: '#fff', color: 'oklch(20% 0.05 250)', outline: 'none', width: '100%' }">
@@ -869,11 +873,15 @@ const continuerDisabled = computed(() => isEditing.value)
                   <span v-else :style="{ color: 'oklch(45% 0.02 250)', fontSize: '11px' }">{{ cob.vigencia || '—' }}</span>
                 </td>
                 <td :style="{ padding: '10px 6px', textAlign: 'center', fontSize: '11px', whiteSpace: 'nowrap' }">
-                  <input v-if="isEditing" type="text" :value="cob.prazoPagamento" @input="(e) => updateCobertura(plano, i, 'prazoPagamento', (e.target as HTMLInputElement).value)" placeholder="ex: 20 anos" :style="{ width: '100%', border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '4px 6px', fontSize: '11px', background: '#fff', color: 'oklch(20% 0.05 250)', outline: 'none', textAlign: 'center' }" />
+                  <select v-if="isEditing" :value="cob.prazoPagamento" @change="(e) => updateCobertura(plano, i, 'prazoPagamento', (e.target as HTMLSelectElement).value)" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '4px 4px', fontSize: '11px', background: '#fff', color: 'oklch(20% 0.05 250)', outline: 'none', width: '100%', cursor: 'pointer' }">
+                    <option value="">Selecione...</option>
+                    <option v-for="p in PRAZO_PAGAMENTO_OPTIONS" :key="p" :value="p">{{ p }}</option>
+                  </select>
                   <span v-else :style="{ color: 'oklch(45% 0.02 250)', fontSize: '11px' }">{{ cob.prazoPagamento || '—' }}</span>
                 </td>
                 <td :style="{ padding: '10px 6px', textAlign: 'right', fontSize: '11px', whiteSpace: 'nowrap' }">
-                  <span :style="{ color: (cob.capitalSegurado || (HORIZONTE_VALORES as any)[cob.nome]?.[cob.vigencia]?.cs || calcCapitalSegurado(cob)) ? 'oklch(30% 0.05 250)' : 'oklch(70% 0.01 260)', fontWeight: 500, fontSize: '11px' }">
+                  <input v-if="isEditing" type="text" :value="cob.capitalSegurado || (HORIZONTE_VALORES as any)[cob.nome]?.[cob.vigencia]?.cs || calcCapitalSegurado(cob)" @input="(e) => updateCobertura(plano, i, 'capitalSegurado', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="{ width: '100%', border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '4px 6px', fontSize: '11px', background: '#fff', color: 'oklch(30% 0.05 250)', outline: 'none', textAlign: 'right' }" />
+                  <span v-else :style="{ color: (cob.capitalSegurado || (HORIZONTE_VALORES as any)[cob.nome]?.[cob.vigencia]?.cs || calcCapitalSegurado(cob)) ? 'oklch(30% 0.05 250)' : 'oklch(70% 0.01 260)', fontWeight: 500, fontSize: '11px' }">
                     {{ cob.capitalSegurado || (HORIZONTE_VALORES as any)[cob.nome]?.[cob.vigencia]?.cs || calcCapitalSegurado(cob) || '—' }}
                   </span>
                 </td>

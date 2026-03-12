@@ -4077,3 +4077,24 @@ export const HORIZONTE_COBERTURAS: Cobertura[] = HORIZONTE_NOMES.map(nome => ({
   capitalSegurado: HORIZONTE_VALORES[nome]["Vitalícia"].cs,
   contribuicaoMensal: HORIZONTE_VALORES[nome]["Vitalícia"].cm,
 }));
+
+export const PRAZO_PAGAMENTO_OPTIONS = [
+  'Vitalício',
+  '5 anos',
+  '10 anos',
+  '15 anos',
+  '20 anos',
+  '25 anos',
+  '30 anos',
+];
+
+export const COBERTURA_TOOLTIPS: Record<string, string> = {
+  'Morte Natural ou Acidental + Adiantamento por Doença Terminal (obrigatório)': 'Cobertura obrigatória: garante indenização aos beneficiários em caso de morte natural ou acidental. Inclui adiantamento integral em vida caso o segurado seja diagnosticado com doença em estágio terminal. O valor é isento de IR e liberado sem necessidade de inventário.',
+  'Indenização Especial de Morte por Acidente (IEA)': 'Cobertura adicional à morte básica: garante indenização extra aos beneficiários quando o falecimento do segurado ocorrer exclusivamente por acidente (causa externa, súbita e involuntária), dobrando a proteção em casos de morte acidental.',
+  'Invalidez Permanente por Acidente - Total ou Parcial (IPA)': 'Garante indenização ao próprio segurado em caso de perda permanente — total ou parcial — de membros ou funções do corpo causada por acidente. O valor é proporcional ao grau de invalidez, conforme tabela das condições gerais.',
+  'Indenização Especial de Invalidez por Doença (IED)': 'Garante indenização ao segurado que, em decorrência de doença, perde de forma total e permanente a capacidade de exercer qualquer atividade que lhe garanta subsistência. Cobertura paga ainda em vida.',
+  'Doenças Graves (DG)': 'Proporciona indenização em vida ao segurado diagnosticado com doenças graves como câncer, infarto, AVC, Alzheimer, Parkinson, ELA, insuficiência renal crônica, entre outras. O valor pode ser usado para tratamentos, manutenção da qualidade de vida ou despesas durante a recuperação.',
+  'Diária por Incapacidade Temporária (DIT)': 'Garante indenização diária caso o segurado fique impossibilitado de exercer suas atividades profissionais por mais de 15 dias consecutivos, em decorrência de doença ou acidente. Especialmente indicada para autônomos, profissionais liberais e trabalhadores em ambientes de risco.',
+  'Diária por Internação Hospitalar (DIH)': 'Garante ao segurado uma indenização por dia de internação hospitalar, a partir do primeiro dia, seja por doença ou acidente. Auxilia no custeio de despesas extras durante o período de hospitalização, como alimentação, transporte e cuidados complementares.',
+  'Serviço de Assistência Funeral (SAF)': 'Oferece suporte completo à família do segurado em caso de falecimento, cobrindo despesas com o serviço funerário (urna, traslado, velório e sepultamento). Alivia a família de preocupações logísticas e financeiras em um momento de luto.',
+};

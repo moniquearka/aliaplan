@@ -156,8 +156,12 @@ async function handleSalvar() {
             <p class="field-value">{{ proponente.rendaMensal || '—' }}</p>
           </div>
           <div>
-            <p class="field-label">Ocupação</p>
+            <p class="field-label">Profissão</p>
             <p class="field-value">{{ proponente.ocupacao || '—' }}</p>
+          </div>
+          <div>
+            <p class="field-label">Gênero</p>
+            <p class="field-value">{{ (proponente as any).genero || '—' }}</p>
           </div>
           <div>
             <p class="field-label">Empresa</p>

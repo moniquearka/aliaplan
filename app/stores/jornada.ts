@@ -66,6 +66,7 @@ export interface Proponente {
   ocupacao: string
   especificacaoOcupacao: string
   empresa: string
+  genero: string
 }
 
 export interface DetalhamentoData {
@@ -166,6 +167,7 @@ const initialDetalhamentoData: DetalhamentoData = {
     ocupacao: 'Gerente',
     especificacaoOcupacao: '',
     empresa: 'Medley Farmacêutica Ltda.',
+    genero: 'Feminino',
   },
   planos: [
     {
