@@ -11,6 +11,11 @@ export interface FundoSelecionado {
   taxaPerformance?: string | null
   rentabilidade?: string
   classificacao?: string
+  estrategia?: string
+  qualificado?: boolean
+  rent12m?: string
+  rent24m?: string
+  rent36m?: string
   percentual: string
   valorAtribuido: string
   percentualAporte: string
@@ -59,6 +64,7 @@ export interface Proponente {
   email: string
   rendaMensal: string
   ocupacao: string
+  especificacaoOcupacao: string
   empresa: string
 }
 
@@ -100,6 +106,7 @@ export interface ResumoData {
     previdencia: { valor: string; percentual: string; itens: string[]; citacao: string }
   }
   visaoLongoPrazo?: string
+  produtoSelecionado?: 'ambos' | 'seguro' | 'previdencia'
 }
 
 // ─── Initial Data ─────────────────────────────────────────────────────────────
@@ -129,7 +136,7 @@ const initialResumoData: ResumoData = {
     { periodo: 'PRÓXIMOS 3-5 ANOS', titulo: 'Crescimento Profissional', descricao: 'Ambição de ascender ao cargo de Diretoria. Potencial aumento de renda.', riscoLabel: 'RISCO PROFISSIONAL', riscos: ['Renda concentrada em CLT', 'Pretensão não alcançada', 'Estresse/Burnout'] },
     { periodo: 'PRÓXIMOS 5-10 ANOS', titulo: 'Educação dos Filhos', descricao: 'Custos elevados com escola e faculdade (R$ 300-500k). Possível intercâmbio.', riscoLabel: 'RISCO EDUCACIONAL', riscos: ['Inflação Educacional', 'Interrupção dos estudos', 'Perda do padrão escolar'] },
     { periodo: 'PRÓXIMOS 10-20 ANOS', titulo: 'Transição de Carreira', descricao: 'Decisão de empreender em negócio próprio.', riscoLabel: 'RISCO FINANCEIRO', riscos: ['Baixa reserva financeira devido a altos custos ao longo dos anos', 'Falta de backup familiar', 'Fracasso do negócio'] },
-    { periodo: 'EM 20 ANOS (60 ANOS)', titulo: 'Aposentadoria Planejada', descricao: 'Objetivo: Renda mensal de R$ 29k. Necessidade de patrimônio de R$ 4,2M.', riscoLabel: 'RISCO LONGEVIDADE', riscos: ['Custos médicos altos', 'Depender dos filhos', 'Patrimônio insuficiente'] },
+    { periodo: 'EM 20 ANOS (60 ANOS)', titulo: 'Aposentadoria Planejada aos 60 anos', descricao: 'Objetivo: Renda mensal de R$ 29k. Necessidade de patrimônio de R$ 4,2M.', riscoLabel: 'RISCO LONGEVIDADE', riscos: ['Custos médicos altos', 'Depender dos filhos', 'Patrimônio insuficiente'] },
   ],
   protege: [
     { titulo: 'Educação dos Filhos', subtitulo: 'Faculdade + Intercâmbio', valor: 'R$ 1,1 Milhão' },
@@ -141,9 +148,10 @@ const initialResumoData: ResumoData = {
     comProtecao: ['Patrimônio Intacto', 'Faculdade Garantida', 'Renda Vitalícia Mantida'],
   },
   solucoes: {
-    protecao: { valor: 'R$ 2.500,00', percentual: '18', itens: ['Tranquilidade total para a família', 'Educação garantida até a faculdade', 'Proteção do patrimônio de R$ 800.000', 'Segurança para empreender'] },
-    previdencia: { valor: 'R$ 1.650,00', percentual: '12', itens: ['Aposentadoria com alta renda'], citacao: 'A estabilidade financeira não é apenas sobre quanto você ganha ou tem, mas sobre quanto você está protegido contra imprevistos.' },
+    protecao: { valor: 'R$ 2.500,00', percentual: '18', itens: ['Tranquilidade para o futuro', 'Proteção do patrimônio', 'Segurança para enfrentar imprevistos'] },
+    previdencia: { valor: 'R$ 1.650,00', percentual: '12', itens: ['Aposentadoria com renda previsível', 'Confiança no planejamento sucessório'], citacao: 'A estabilidade financeira não é apenas sobre quanto você ganha ou tem, mas sobre quanto você está protegido contra imprevistos.' },
   },
+  produtoSelecionado: 'ambos',
 }
 
 const initialDetalhamentoData: DetalhamentoData = {
@@ -156,6 +164,7 @@ const initialDetalhamentoData: DetalhamentoData = {
     email: 'tais.oliveira@email.com',
     rendaMensal: 'R$ 18.000,00',
     ocupacao: 'Gerente',
+    especificacaoOcupacao: '',
     empresa: 'Medley Farmacêutica Ltda.',
   },
   planos: [
@@ -170,22 +179,7 @@ const initialDetalhamentoData: DetalhamentoData = {
           aporteInicial: 'R$ 10.000,00',
           tipoPlano: 'PGBL',
           riskValue: 30,
-          fundos: [
-            {
-              nome: 'Absolute Atenas Icatu Prev FIC FIRF CP',
-              cnpj: '47.612.701/0001-45',
-              tipo: 'PGBL',
-              taxaAdm: '0.98% a.a.',
-              taxaAdmMax: '0,98% a.a.',
-              classificacao: 'Renda Fixa',
-              rentabilidade: '-',
-              percentual: '100',
-              valorAtribuido: 'R$ 1.650,00',
-              percentualAporte: '100',
-              valorAporte: 'R$ 10.000,00',
-              processoSusep: '15414.634898/2022-43',
-            },
-          ],
+          fundos: [],
         },
       ],
       capitalSegurado: '',
@@ -232,6 +226,22 @@ export const useJornadaStore = defineStore('jornada', {
     },
     saveDetalhamentoData(data: DetalhamentoData) {
       this.detalhamentoData = data
+    },
+    setProdutoSelecionado(produto: 'ambos' | 'seguro' | 'previdencia') {
+      this.resumoData.produtoSelecionado = produto
+      // Sincronizar planos do Detalhamento
+      const planosAtuais = this.detalhamentoData.planos
+      const planoPrev = planosAtuais.find(p => p.tipo === 'previdencia')
+      const planoSeg = planosAtuais.find(p => p.tipo === 'seguro')
+      const defaultPrev = JSON.parse(JSON.stringify(initialDetalhamentoData.planos.find(p => p.tipo === 'previdencia')!))
+      const defaultSeg = JSON.parse(JSON.stringify(initialDetalhamentoData.planos.find(p => p.tipo === 'seguro')!))
+      if (produto === 'ambos') {
+        this.detalhamentoData.planos = [planoPrev || defaultPrev, planoSeg || defaultSeg]
+      } else if (produto === 'seguro') {
+        this.detalhamentoData.planos = [planoSeg || defaultSeg]
+      } else {
+        this.detalhamentoData.planos = [planoPrev || defaultPrev]
+      }
     },
   },
 })

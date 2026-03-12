@@ -15,6 +15,17 @@ const editActionDone = ref(false)
 const data = computed(() => isEditing.value ? draft.value : store.detalhamentoData)
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+function riscoCorParaLabel(cor: string): string {
+  const mapa: Record<string, string> = {
+    '#3B82F6': 'Muito Baixo',
+    '#22C55E': 'Baixo',
+    '#EAB308': 'Médio',
+    '#F97316': 'Alto',
+    '#EF4444': 'Muito Alto'
+  }
+  return mapa[cor?.toUpperCase()] || mapa[cor] || cor || '—'
+}
+
 function parseBRL(val: string): number {
   if (!val) return 0
   const clean = val.replace(/[R$\s.]/g, '').replace(',', '.')
@@ -82,6 +93,20 @@ function redistributePercentuais(fundos: FundoSelecionado[], contribuicaoMensal:
 // ── Editing ──────────────────────────────────────────────────────────────────
 function handleEdit() {
   draft.value = JSON.parse(JSON.stringify(store.detalhamentoData))
+  // Espelhar valores de Soluções Propostas nos campos de Contribuição Mensal
+  const solucoes = store.resumoData?.solucoes
+  if (solucoes) {
+    for (const plano of draft.value.planos) {
+      if (plano.tipo === 'previdencia' && solucoes.previdencia?.valor) {
+        for (const sub of plano.subPlanos) {
+          sub.contribuicaoMensal = solucoes.previdencia.valor
+        }
+      }
+      if (plano.tipo === 'seguro' && solucoes.protecao?.valor) {
+        plano.premioMensal = solucoes.protecao.valor
+      }
+    }
+  }
   isEditing.value = true
   emit('editing-change', true)
 }
@@ -91,16 +116,85 @@ function handleCancel() {
   emit('editing-change', false)
 }
 function handleSave() {
-  // Validar soma dos percentuais
+  const proponente = store.resumoData?.proponente
+  const idadeAtual = proponente?.dataNascimento
+    ? Math.floor((Date.now() - new Date(proponente.dataNascimento.split('/').reverse().join('-')).getTime()) / (365.25 * 24 * 3600 * 1000))
+    : null
+
   for (const plano of draft.value.planos) {
     if (plano.tipo !== 'previdencia') continue
+
+    // Validar Idade de aposentadoria
+    const idadeAp = parseInt(plano.idadeAposentadoria)
+    if (!plano.idadeAposentadoria || isNaN(idadeAp)) {
+      alert('Preencha o campo "Idade que deseja se aposentar" antes de salvar.')
+      return
+    }
+    if (idadeAtual !== null && idadeAp <= idadeAtual) {
+      alert(`A idade de aposentadoria deve ser maior que a idade atual (${idadeAtual} anos). Informe pelo menos ${idadeAtual + 1} anos.`)
+      return
+    }
+
     for (let si = 0; si < plano.subPlanos.length; si++) {
       const sub = plano.subPlanos[si]
-      if (sub.fundos.length < 2) continue
-      const soma = sub.fundos.reduce((acc: number, f: FundoSelecionado) => acc + (parseFloat(f.percentual) || 0), 0)
-      if (Math.abs(soma - 100) >= 0.01) {
-        alert(`A soma dos percentuais dos fundos é ${soma.toFixed(0)}%. Ajuste para totalizar 100% antes de salvar.`)
+
+      // Validar: pelo menos Contribuição Mensal ou Aporte Inicial
+      const contrib = parseMoney(sub.contribuicaoMensal)
+      const aporte = parseMoney(sub.aporteInicial)
+      if (contrib === 0 && aporte === 0) {
+        alert(`No sub-plano ${si + 1} (${sub.tipoPlano}), preencha pelo menos um dos campos: Contribuição Mensal ou Valor do Aporte Inicial.`)
         return
+      }
+
+      // Validar mínimos
+      if (contrib > 0 && contrib < 100) {
+        alert(`A Contribuição Mensal mínima é R$ 100,00. Corrija o valor no sub-plano ${si + 1} (${sub.tipoPlano}).`)
+        return
+      }
+      if (aporte > 0 && aporte < 1000) {
+        alert(`O Valor do Aporte Inicial mínimo é R$ 1.000,00. Corrija o valor no sub-plano ${si + 1} (${sub.tipoPlano}).`)
+        return
+      }
+
+      // Validar valor mínimo dos fundos (R$ 50)
+      for (const f of sub.fundos) {
+        const valorContrib = parseMoney(f.valorAtribuido)
+        if (valorContrib > 0 && valorContrib < 50) {
+          alert(`O Valor Atribuído de Contribuição Mensal do fundo "${f.nome}" deve ser no mínimo R$ 50,00.`)
+          return
+        }
+        const valorAporte = parseMoney(f.valorAporte)
+        if (valorAporte > 0 && valorAporte < 50) {
+          alert(`O Valor Atribuído de Aporte Inicial do fundo "${f.nome}" deve ser no mínimo R$ 50,00.`)
+          return
+        }
+      }
+
+      // Validar distribuição obrigatória dos fundos
+      if (sub.fundos.length > 0) {
+        if (contrib > 0) {
+          const somaContrib = sub.fundos.reduce((acc: number, f: FundoSelecionado) => acc + parseMoney(f.valorAtribuido), 0)
+          if (Math.abs(somaContrib - contrib) > 0.02) {
+            alert(`A soma dos valores atribuídos de Contribuição Mensal (${formatMoney(somaContrib)}) deve ser igual ao total (${formatMoney(contrib)}). Redistribua os valores.`)
+            return
+          }
+        }
+        if (aporte > 0) {
+          const somaAporte = sub.fundos.reduce((acc: number, f: FundoSelecionado) => acc + parseMoney(f.valorAporte), 0)
+          if (Math.abs(somaAporte - aporte) > 0.02) {
+            alert(`A soma dos valores atribuídos de Aporte Inicial (${formatMoney(somaAporte)}) deve ser igual ao total (${formatMoney(aporte)}). Redistribua os valores.`)
+            return
+          }
+        }
+      }
+
+      // Validar soma dos percentuais
+      if (sub.fundos.length >= 2) {
+        const soma = sub.fundos.reduce((acc: number, f: FundoSelecionado) => acc + (parseFloat(f.percentual) || 0), 0)
+        if (Math.abs(soma - 100) >= 0.01) {
+          alert(`A soma dos percentuais dos fundos é ${soma.toFixed(0)}%. Ajuste para totalizar 100% antes de salvar.`)
+          return
+        }
       }
     }
   }
@@ -146,6 +240,15 @@ function addSubPlano(plano: Plano) {
   const newSub: SubPlano = { id: `sub-${Date.now()}`, contribuicaoMensal: '', aporteInicial: '', tipoPlano: 'PGBL', riskValue: 30, fundos: [] }
   updatePlano(plano.id, { ...plano, subPlanos: [...plano.subPlanos, newSub] })
 }
+function addSubPlanoOposto(plano: Plano) {
+  // Determinar o tipo oposto ao já existente
+  const tiposExistentes = plano.subPlanos.map((s: SubPlano) => s.tipoPlano)
+  let tipoOposto: 'PGBL' | 'VGBL' = 'VGBL'
+  if (tiposExistentes.includes('VGBL') && !tiposExistentes.includes('PGBL')) tipoOposto = 'PGBL'
+  else if (tiposExistentes.includes('PGBL') && !tiposExistentes.includes('VGBL')) tipoOposto = 'VGBL'
+  const newSub: SubPlano = { id: `sub-${Date.now()}`, contribuicaoMensal: '', aporteInicial: '', tipoPlano: tipoOposto, riskValue: 30, fundos: [] }
+  updatePlano(plano.id, { ...plano, subPlanos: [...plano.subPlanos, newSub] })
+}
 function setSubField(plano: Plano, sub: SubPlano, key: keyof SubPlano, value: string) {
   let updatedSub = { ...sub, [key]: value }
   if (key === 'contribuicaoMensal') {
@@ -188,7 +291,15 @@ function toggleFundo(plano: Plano, sub: SubPlano, f: typeof FUNDOS_DISPONIVEIS[0
       classificacao: f.classificacao || '-',
       percentual: '0', valorAtribuido: '', percentualAporte: '0', valorAporte: '',
       processoSusep: sub.tipoPlano === 'PGBL' ? ((f as any).susepPGBL || '') : ((f as any).susepVGBL || ''),
-    }
+      qualificado: (f as any).qualificado || false,
+      estrategia: (f as any).estrategia || '',
+      risco: (f as any).risco || '',
+      riscoNum: (f as any).riscoNum || 0,
+      riscoCor: (f as any).riscoCor || '#4285F4',
+      rent12m: (f as any).rent12m || '',
+      rent24m: (f as any).rent24m || '',
+      rent36m: (f as any).rent36m || '',
+    } as any
     newFundos = redistributePercentuais([...sub.fundos, newFundo], sub.contribuicaoMensal, sub.aporteInicial)
   }
   updateSubPlano(plano, sub.id, { ...sub, fundos: newFundos })
@@ -290,10 +401,10 @@ function cobTotal(plano: Plano): number {
 }
 
 // ── Fund search state ─────────────────────────────────────────────────────────
-const fundSearchState = ref<Record<string, { search: string; showModal: boolean; tipoPlano: string }>>({})
+const fundSearchState = ref<Record<string, { search: string; showModal: boolean; tipoPlano: string; sortField: string; sortDir: 'asc' | 'desc' }>>({})
 function getFundSearch(subId: string) {
   if (!fundSearchState.value[subId]) {
-    fundSearchState.value[subId] = { search: '', showModal: false, tipoPlano: 'PGBL' }
+    fundSearchState.value[subId] = { search: '', showModal: false, tipoPlano: 'PGBL', sortField: '', sortDir: 'asc' }
   }
   return fundSearchState.value[subId]
 }
@@ -301,7 +412,7 @@ function getFilteredFundos(sub: SubPlano) {
   const state = getFundSearch(sub.id)
   const contrib = parseMoney(sub.contribuicaoMensal)
   const aporte = parseMoney(sub.aporteInicial)
-  return FUNDOS_DISPONIVEIS.filter((f: any) => {
+  const filtered = FUNDOS_DISPONIVEIS.filter((f: any) => {
     if (sub.tipoPlano === 'PGBL' && !f.codigoPGBL) return false
     if (sub.tipoPlano === 'VGBL' && !f.susepVGBL) return false
     if (!f.nome.toLowerCase().includes(state.search.toLowerCase()) && !f.cnpj.includes(state.search)) return false
@@ -310,6 +421,30 @@ function getFilteredFundos(sub: SubPlano) {
     const aporteOk = aporte > 0 && aporte >= Math.max(1000, f.aporteMinimo)
     return contribuicaoOk || aporteOk
   })
+  if (!state.sortField) return filtered
+  return [...filtered].sort((a: any, b: any) => {
+    let va: number, vb: number
+    if (state.sortField === 'taxa') {
+      va = parseFloat(a.taxa) || 0
+      vb = parseFloat(b.taxa) || 0
+    } else if (state.sortField === 'risco') {
+      va = a.riscoNum || 0
+      vb = b.riscoNum || 0
+    } else {
+      va = parseFloat(a.rentabilidade) || 0
+      vb = parseFloat(b.rentabilidade) || 0
+    }
+    return state.sortDir === 'asc' ? va - vb : vb - va
+  })
+}
+function toggleSort(sub: SubPlano, field: string) {
+  const state = getFundSearch(sub.id)
+  if (state.sortField === field) {
+    state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc'
+  } else {
+    state.sortField = field
+    state.sortDir = 'asc'
+  }
 }
 
 const continuerDisabled = computed(() => isEditing.value)
@@ -349,9 +484,9 @@ const continuerDisabled = computed(() => isEditing.value)
         </button>
       </div>
 
-      <!-- Tipo de Investimento -->
+      <!-- Tipo de Produto -->
       <div :style="{ marginBottom: '24px' }">
-        <label class="field-label">Tipo de Investimento</label>
+        <label class="field-label">Tipo de Produto</label>
         <div :style="{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', marginTop: '8px' }">
           <button v-for="opt in [{ id: 'previdencia', label: 'Previdência' }, { id: 'seguro', label: 'Seguro de Vida' }]" :key="opt.id"
             @click="() => { if (!isEditing) return; const p = isEditing ? draft.planos.find((x: Plano) => x.id === plano.id) : null; if (!p) return; if (opt.id === 'seguro') { p.tipo = 'seguro'; if (!p.coberturas.length) p.coberturas = HORIZONTE_COBERTURAS.map((c: any) => ({...c})); p.produtoRecomendado = p.produtoRecomendado || 'Horizonte' } else { p.tipo = 'previdencia'; if (!p.subPlanos.length) p.subPlanos = [{ id: `sub-${Date.now()}`, contribuicaoMensal: '', aporteInicial: '', tipoPlano: 'PGBL', riskValue: 30, fundos: [] }] } }"
@@ -384,80 +519,185 @@ const continuerDisabled = computed(() => isEditing.value)
           <!-- Contribuição + Aporte -->
           <div :style="{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '16px' }">
             <div>
-              <label class="field-label">Contribuição Mensal</label>
+              <label class="field-label">Contribuição Mensal <span style="color:#dc2626">*</span></label>
               <input v-if="isEditing" type="text" :value="sub.contribuicaoMensal" @change="(e) => setSubField(plano, sub, 'contribuicaoMensal', (e.target as HTMLInputElement).value)" class="field-input" placeholder="R$ 0,00" />
               <p v-else class="field-value">{{ sub.contribuicaoMensal || '—' }}</p>
             </div>
             <div>
-              <label class="field-label">Valor do Aporte Inicial</label>
+              <label class="field-label">Valor do Aporte Inicial <span style="color:#dc2626">*</span></label>
               <input v-if="isEditing" type="text" :value="sub.aporteInicial" @change="(e) => setSubField(plano, sub, 'aporteInicial', (e.target as HTMLInputElement).value)" class="field-input" placeholder="R$ 0,00" />
               <p v-else class="field-value">{{ sub.aporteInicial || '—' }}</p>
             </div>
           </div>
 
-          <!-- Tipo de Plano (PGBL/VGBL) -->
+          <!-- Tipo do Plano (PGBL/VGBL) radio buttons -->
           <div :style="{ marginBottom: '12px' }">
-            <label class="field-label">Tipo de Plano</label>
-            <select v-if="isEditing" :value="sub.tipoPlano" @change="(e) => { const p = draft.planos.find((x: Plano) => x.id === plano.id); const s = p?.subPlanos.find((x: SubPlano) => x.id === sub.id); if (s) s.tipoPlano = (e.target as HTMLSelectElement).value as 'PGBL' | 'VGBL' }" class="field-select">
-              <option value="PGBL">PGBL</option>
-              <option value="VGBL">VGBL</option>
-            </select>
-            <p v-else class="field-value">{{ sub.tipoPlano }}</p>
+            <label class="field-label">Tipo do Plano <span style="color:#dc2626">*</span></label>
+            <!-- Modo edição: radio buttons estilizados com círculo -->
+            <div v-if="isEditing" :style="{ display: 'flex', gap: '20px', marginTop: '8px' }">
+              <label v-for="opt in ['PGBL', 'VGBL']" :key="opt"
+                :style="{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none' }"
+                @click="() => { const p = draft.planos.find((x: Plano) => x.id === plano.id); const s = p?.subPlanos.find((x: SubPlano) => x.id === sub.id); if (s) s.tipoPlano = opt as 'PGBL' | 'VGBL' }">
+                <!-- Círculo radio -->
+                <span :style="{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', border: `2px solid ${sub.tipoPlano === opt ? '#1e40af' : 'oklch(75% 0.01 260)'}`, background: '#fff', flexShrink: 0, transition: 'border-color 0.15s' }">
+                  <span v-if="sub.tipoPlano === opt" :style="{ width: '8px', height: '8px', borderRadius: '50%', background: '#1e40af', display: 'block' }" />
+                </span>
+                <span :style="{ fontSize: '13px', fontWeight: sub.tipoPlano === opt ? 600 : 400, color: sub.tipoPlano === opt ? 'oklch(20% 0.05 250)' : 'oklch(45% 0.02 250)' }">{{ opt }}</span>
+              </label>
+            </div>
+            <!-- Modo visualização: badge com nome do plano selecionado -->
+            <div v-else :style="{ marginTop: '6px' }">
+              <span :style="{ display: 'inline-block', fontSize: '13px', fontWeight: 600, color: 'oklch(20% 0.05 250)', background: 'oklch(95% 0.005 260)', border: '1px solid oklch(85% 0.005 260)', borderRadius: '6px', padding: '4px 14px' }">{{ sub.tipoPlano }}</span>
+            </div>
           </div>
 
           <!-- Seleção de Fundos -->
           <div>
-            <label class="field-label" :style="{ marginBottom: '8px', display: 'block' }">Seleção de Fundos</label>
+            <!-- Botão abrir modal (modo edição) -->
+            <template v-if="isEditing">
+              <label class="field-label" :style="{ marginBottom: '4px', display: 'block' }">Buscar Fundos Disponíveis <span style="color:#dc2626">*</span></label>
+              <button type="button" @click="() => { getFundSearch(sub.id).search = ''; getFundSearch(sub.id).showModal = true }"
+                :style="{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', padding: '8px 12px', fontSize: '13px', background: '#fff', color: 'oklch(55% 0.02 250)', cursor: 'pointer', height: '40px', textAlign: 'left', boxSizing: 'border-box', marginBottom: '4px' }">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" :style="{ flexShrink: 0, color: 'oklch(55% 0.02 250)' }">
+                  <circle cx="11" cy="11" r="8" />
+                  <path stroke-linecap="round" d="m21 21-4.35-4.35" />
+                </svg>
+                Nome ou CNPJ do Fundo
+              </button>
+              <p :style="{ fontSize: '11px', color: 'oklch(55% 0.02 250)', marginTop: '4px', marginBottom: '8px' }">{{ getFilteredFundos(sub).length }} fundos disponíveis</p>
+            </template>
+            <template v-else>
+              <label class="field-label" :style="{ marginBottom: '8px', display: 'block' }">Seleção de Fundos</label>
+            </template>
 
-            <!-- Botão abrir modal -->
-            <button v-if="isEditing" @click="getFundSearch(sub.id).showModal = true"
-              :style="{ padding: '8px 14px', fontSize: '13px', borderRadius: '6px', border: '1px solid oklch(90% 0.005 260)', background: '#fff', color: 'oklch(20% 0.05 250)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }">
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-              </svg>
-              Buscar Fundo
-            </button>
-
-            <!-- Modal de busca -->
-            <div v-if="getFundSearch(sub.id).showModal" :style="{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }">
-              <div :style="{ background: '#fff', borderRadius: '12px', padding: '24px', width: '90%', maxWidth: '700px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', gap: '16px' }">
-                <div :style="{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }">
-                  <h3 :style="{ fontSize: '16px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: 0 }">Selecionar Fundo</h3>
-                  <button @click="getFundSearch(sub.id).showModal = false" :style="{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'oklch(45% 0.02 250)' }">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            <!-- Modal de busca (design idêntico ao site de referência) -->
+            <div v-if="getFundSearch(sub.id).showModal"
+              :style="{ position: 'fixed', top: 0, bottom: 0, left: '280px', right: 0, zIndex: 200, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }"
+              @click.self="getFundSearch(sub.id).showModal = false">
+              <div :style="{ background: '#fff', borderRadius: '12px', boxShadow: '0 8px 40px rgba(0,0,0,0.18)', width: 'min(1100px, 96vw)', maxHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }">
+                <!-- Header do modal -->
+                <div :style="{ padding: '20px 24px 16px', borderBottom: '1px solid oklch(93% 0.003 260)' }">
+                  <div :style="{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', marginBottom: '14px' }">
+                    <div>
+                      <h3 :style="{ fontSize: '15px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Buscar Fundos Disponíveis</h3>
+                      <p :style="{ fontSize: '12px', color: 'oklch(55% 0.02 250)', margin: '4px 0 0' }">{{ getFilteredFundos(sub).length }} de {{ FUNDOS_DISPONIVEIS.length }} fundos encontrados</p>
+                    </div>
+                    <div :style="{ display: 'flex', alignItems: 'flex-start', gap: '12px' }">
+                      <!-- Termômetro de Risco -->
+                      <div :style="{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', minWidth: '220px' }">
+                        <div :style="{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }">
+                          <span :style="{ fontSize: '11px', color: 'oklch(55% 0.02 250)', whiteSpace: 'nowrap' }">Termômetro de Risco</span>
+                          <div :style="{ width: '13px', height: '13px', borderRadius: '50%', border: '1px solid oklch(75% 0.01 260)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'help', fontSize: '9px', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" title="Indica o nível de risco dos fundos selecionados">i</div>
+                        </div>
+                        <div :style="{ display: 'flex', flexDirection: 'column', gap: '2px', width: '220px', flexShrink: 0 }">
+                          <div :style="{ width: '100%', display: 'flex', height: '4px', borderRadius: '2px', overflow: 'hidden' }">
+                            <div v-for="(seg, si) in [{ color: '#4285F4' }, { color: '#34A853' }, { color: '#FBBC04' }, { color: '#EA8600' }, { color: '#EA4335' }]" :key="si" :style="{ flex: 1, background: seg.color, height: '100%' }"></div>
+                          </div>
+                          <div :style="{ display: 'flex', justifyContent: 'space-between' }">
+                            <span :style="{ fontSize: '9px', color: 'oklch(65% 0.01 260)' }">Muito baixo</span>
+                            <span :style="{ fontSize: '9px', color: 'oklch(65% 0.01 260)' }">Média</span>
+                            <span :style="{ fontSize: '9px', color: 'oklch(65% 0.01 260)' }">Muito alto</span>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- Botão fechar -->
+                      <button type="button" @click="getFundSearch(sub.id).showModal = false"
+                        :style="{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid oklch(88% 0.005 260)', background: 'oklch(97% 0.003 260)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'oklch(45% 0.02 250)', flexShrink: 0, marginTop: '2px' }" title="Fechar">
+                        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <!-- Campo de busca com ícone -->
+                  <div :style="{ position: 'relative' }">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" :style="{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'oklch(55% 0.02 250)', pointerEvents: 'none' }">
+                      <circle cx="11" cy="11" r="8" />
+                      <path stroke-linecap="round" d="m21 21-4.35-4.35" />
                     </svg>
-                  </button>
+                    <input autofocus type="text" v-model="getFundSearch(sub.id).search" placeholder="Pesquisar por nome ou CNPJ do fundo..."
+                      :style="{ width: '100%', border: '1px solid oklch(88% 0.005 260)', borderRadius: '8px', padding: '9px 12px 9px 36px', fontSize: '13px', background: 'oklch(98% 0.002 260)', color: 'oklch(20% 0.05 250)', outline: 'none', boxSizing: 'border-box' }" />
+                  </div>
                 </div>
-                <input type="text" v-model="getFundSearch(sub.id).search" placeholder="Buscar por nome ou CNPJ..." class="field-input" />
-                <div :style="{ overflowY: 'auto', flex: 1 }">
-                  <table :style="{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }">
-                    <thead>
-                      <tr :style="{ background: 'oklch(95% 0.005 260)' }">
-                        <th :style="{ padding: '8px 10px', textAlign: 'left', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: 'oklch(45% 0.02 250)' }">Fundo</th>
-                        <th :style="{ padding: '8px 6px', textAlign: 'center', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: 'oklch(45% 0.02 250)' }">Taxa Adm.</th>
-                        <th :style="{ padding: '8px 6px', textAlign: 'center', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: 'oklch(45% 0.02 250)' }">Classificação</th>
-                        <th :style="{ padding: '8px 6px', textAlign: 'center', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: 'oklch(45% 0.02 250)' }">Sel.</th>
+                <!-- Tabela de fundos -->
+                <div :style="{ overflowX: 'auto', overflowY: 'auto', flex: 1 }">
+                  <table :style="{ width: '100%', minWidth: '900px', fontSize: '12px', borderCollapse: 'collapse', tableLayout: 'auto' }">
+                    <colgroup>
+                      <col style="width: 36px" />
+                      <col style="min-width: 280px" />
+                      <col style="width: 120px" />
+                      <col style="width: 130px" />
+                      <col style="width: 150px" />
+                      <col style="min-width: 160px" />
+                    </colgroup>
+                    <thead :style="{ background: 'oklch(96% 0.004 260)', position: 'sticky', top: 0, zIndex: 1 }">
+                      <tr>
+                        <th :style="{ textAlign: 'left', padding: '10px 10px', fontWeight: 600, color: 'oklch(45% 0.02 250)', width: '28px' }"></th>
+                        <th :style="{ textAlign: 'left', padding: '10px 14px', fontWeight: 600, color: 'oklch(45% 0.02 250)' }">Nome</th>
+                        <th @click="toggleSort(sub, 'rentabilidade')" :style="{ textAlign: 'right', padding: '10px 14px', fontWeight: 600, color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none', borderLeft: '1px solid oklch(91% 0.004 260)' }">
+                          <span :style="{ display: 'inline-flex', alignItems: 'center', gap: '5px' }">
+                            Rentabilidade
+                            <span :style="{ display: 'inline-flex', flexDirection: 'row', alignItems: 'center', gap: '3px' }">
+                              <span :style="{ width: 0, height: 0, borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderBottom: `5px solid ${getFundSearch(sub.id).sortField === 'rentabilidade' && getFundSearch(sub.id).sortDir === 'asc' ? 'oklch(20% 0.05 250)' : 'oklch(75% 0.01 260)'}` }"></span>
+                              <span :style="{ width: 0, height: 0, borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderTop: `5px solid ${getFundSearch(sub.id).sortField === 'rentabilidade' && getFundSearch(sub.id).sortDir === 'desc' ? 'oklch(20% 0.05 250)' : 'oklch(75% 0.01 260)'}` }"></span>
+                            </span>
+                          </span>
+                        </th>
+                        <th @click="toggleSort(sub, 'risco')" :style="{ textAlign: 'center', padding: '10px 14px', fontWeight: 600, color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none', borderLeft: '1px solid oklch(91% 0.004 260)' }">
+                          <span :style="{ display: 'inline-flex', alignItems: 'center', gap: '5px' }">
+                            Grau de Risco
+                            <span :style="{ display: 'inline-flex', flexDirection: 'row', alignItems: 'center', gap: '3px' }">
+                              <span :style="{ width: 0, height: 0, borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderBottom: `5px solid ${getFundSearch(sub.id).sortField === 'risco' && getFundSearch(sub.id).sortDir === 'asc' ? 'oklch(20% 0.05 250)' : 'oklch(75% 0.01 260)'}` }"></span>
+                              <span :style="{ width: 0, height: 0, borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderTop: `5px solid ${getFundSearch(sub.id).sortField === 'risco' && getFundSearch(sub.id).sortDir === 'desc' ? 'oklch(20% 0.05 250)' : 'oklch(75% 0.01 260)'}` }"></span>
+                            </span>
+                          </span>
+                        </th>
+                        <th @click="toggleSort(sub, 'taxa')" :style="{ textAlign: 'right', padding: '10px 14px', fontWeight: 600, color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none', borderLeft: '1px solid oklch(91% 0.004 260)' }">
+                          <span :style="{ display: 'inline-flex', alignItems: 'center', gap: '5px' }">
+                            Taxa Máx. Adm.
+                            <span :style="{ display: 'inline-flex', flexDirection: 'row', alignItems: 'center', gap: '3px' }">
+                              <span :style="{ width: 0, height: 0, borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderBottom: `5px solid ${getFundSearch(sub.id).sortField === 'taxa' && getFundSearch(sub.id).sortDir === 'asc' ? 'oklch(20% 0.05 250)' : 'oklch(75% 0.01 260)'}` }"></span>
+                              <span :style="{ width: 0, height: 0, borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderTop: `5px solid ${getFundSearch(sub.id).sortField === 'taxa' && getFundSearch(sub.id).sortDir === 'desc' ? 'oklch(20% 0.05 250)' : 'oklch(75% 0.01 260)'}` }"></span>
+                            </span>
+                          </span>
+                        </th>
+                        <th :style="{ textAlign: 'left', padding: '10px 14px', fontWeight: 600, color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap', borderLeft: '1px solid oklch(91% 0.004 260)' }">Estratégia</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr v-for="f in getFilteredFundos(sub)" :key="f.cnpj" :style="{ borderBottom: '1px solid oklch(93% 0.003 260)', cursor: 'pointer' }" @click="toggleFundo(plano, sub, f)">
-                        <td :style="{ padding: '8px 10px', color: 'oklch(20% 0.05 250)', fontWeight: 500 }">
-                          <p :style="{ margin: 0, fontSize: '12px', fontWeight: 600 }">{{ f.nome }}</p>
-                          <p :style="{ margin: 0, fontSize: '11px', color: 'oklch(55% 0.02 250)' }">{{ f.cnpj }}</p>
+                      <tr v-for="f in getFilteredFundos(sub)" :key="f.cnpj"
+                        @click="toggleFundo(plano, sub, f)"
+                        :style="{ cursor: 'pointer', borderTop: '1px solid oklch(94% 0.003 260)', background: sub.fundos.some((sf: FundoSelecionado) => sf.cnpj === f.cnpj) ? 'rgba(30,64,175,0.05)' : 'transparent' }"
+                        @mouseenter="(e: MouseEvent) => { if (!sub.fundos.some((sf: FundoSelecionado) => sf.cnpj === f.cnpj)) (e.currentTarget as HTMLElement).style.background = 'oklch(97.5% 0.003 260)' }"
+                        @mouseleave="(e: MouseEvent) => { (e.currentTarget as HTMLElement).style.background = sub.fundos.some((sf: FundoSelecionado) => sf.cnpj === f.cnpj) ? 'rgba(30,64,175,0.05)' : 'transparent' }">
+
+                        <td :style="{ padding: '10px 10px' }">
+                          <input type="checkbox" :checked="sub.fundos.some((sf: FundoSelecionado) => sf.cnpj === f.cnpj)" readonly :style="{ width: '13px', height: '13px', cursor: 'pointer', accentColor: 'oklch(20% 0.05 250)' }" />
                         </td>
-                        <td :style="{ padding: '8px 6px', textAlign: 'center', color: 'oklch(45% 0.02 250)' }">{{ f.taxa }}</td>
-                        <td :style="{ padding: '8px 6px', textAlign: 'center', color: 'oklch(45% 0.02 250)' }">{{ f.classificacao || '—' }}</td>
-                        <td :style="{ padding: '8px 6px', textAlign: 'center' }">
-                          <div :style="{ width: '18px', height: '18px', borderRadius: '4px', border: sub.fundos.some((sf: FundoSelecionado) => sf.cnpj === f.cnpj) ? 'none' : '1px solid oklch(80% 0.005 260)', background: sub.fundos.some((sf: FundoSelecionado) => sf.cnpj === f.cnpj) ? 'oklch(20% 0.05 250)' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }">
-                            <svg v-if="sub.fundos.some((sf: FundoSelecionado) => sf.cnpj === f.cnpj)" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
+                        <td :style="{ padding: '10px 14px' }">
+                          <div :style="{ fontWeight: 500, color: 'oklch(20% 0.05 250)', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }">{{ f.nome }}</div>
+                          <div :style="{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', flexWrap: 'nowrap' }">
+                            <span :style="{ fontSize: '11px', color: 'oklch(55% 0.02 250)', whiteSpace: 'nowrap' }">{{ f.cnpj }}</span>
+                            <span v-if="(f as any).qualificado" :style="{ fontSize: '10px', fontWeight: 600, color: 'oklch(50% 0.01 260)', background: 'oklch(93% 0.003 260)', border: '1px solid oklch(85% 0.005 260)', borderRadius: '3px', padding: '1px 5px', letterSpacing: '0.05em', textTransform: 'uppercase', whiteSpace: 'nowrap', flexShrink: 0 }">QUALIFICADO</span>
                           </div>
                         </td>
+                        <td :style="{ padding: '10px 14px', textAlign: 'right', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap', borderLeft: '1px solid oklch(93% 0.003 260)' }">{{ (f as any).rent12m || '—' }}</td>
+                        <td :style="{ padding: '10px 14px', textAlign: 'center', borderLeft: '1px solid oklch(93% 0.003 260)' }">
+                          <div :style="{ display: 'flex', alignItems: 'center', justifyContent: 'center' }">
+                            <div :style="{ width: '14px', height: '14px', borderRadius: '50%', background: (f as any).riscoCor || '#4285F4', flexShrink: 0 }"></div>
+                          </div>
+                        </td>
+                        <td :style="{ padding: '10px 14px', textAlign: 'right', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap', borderLeft: '1px solid oklch(93% 0.003 260)' }">{{ f.taxa }}</td>
+                        <td :style="{ padding: '10px 14px', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap', borderLeft: '1px solid oklch(93% 0.003 260)' }">{{ (f as any).estrategia || f.classificacao || '-' }}</td>
                       </tr>
                     </tbody>
                   </table>
+                </div>
+                <!-- Rodapé do modal -->
+                <div :style="{ padding: '12px 24px', borderTop: '1px solid oklch(93% 0.003 260)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }">
+                  <span :style="{ fontSize: '12px', color: 'oklch(55% 0.02 250)' }">{{ sub.fundos.length }} fundo{{ sub.fundos.length !== 1 ? 's' : '' }} selecionado{{ sub.fundos.length !== 1 ? 's' : '' }}</span>
+                  <button type="button" @click="getFundSearch(sub.id).showModal = false"
+                    :style="{ background: 'oklch(20% 0.05 250)', color: '#fff', border: 'none', borderRadius: '6px', padding: '8px 20px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }">Confirmar</button>
                 </div>
               </div>
             </div>
@@ -465,21 +705,35 @@ const continuerDisabled = computed(() => isEditing.value)
             <!-- Fundos selecionados -->
             <div v-if="sub.fundos.length > 0" :style="{ display: 'flex', flexDirection: 'column', gap: '8px' }">
               <div v-if="isEditing"><label class="field-label" :style="{ marginBottom: '4px', display: 'block' }">Fundos Selecionados</label></div>
-              <div v-for="fundo in sub.fundos" :key="fundo.cnpj" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', padding: '10px 14px', background: '#fff', display: 'grid', gridTemplateColumns: '1fr auto 28px', gridTemplateRows: 'auto auto auto', columnGap: '12px', rowGap: '6px', alignItems: 'start' }">
-                <!-- Nome -->
-                <p :style="{ fontSize: '13px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: 0, gridColumn: 1, gridRow: 1, wordBreak: 'break-word' }">{{ fundo.nome }}</p>
-                <!-- Contribuição Mensal -->
-                <div :style="{ gridColumn: 2, gridRow: 1 }">
-                  <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', margin: '0 0 3px 0', textAlign: 'right' }">Contribuição Mensal</p>
-                  <div :style="{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }">
+              <!-- Card de fundo - layout idêntico ao site de referência -->
+              <div v-for="fundo in sub.fundos" :key="fundo.cnpj"
+                :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', padding: '10px 14px', background: '#fff', display: 'grid', gridTemplateColumns: '1fr auto 28px', gridTemplateRows: 'auto auto auto auto', columnGap: '12px', rowGap: '6px', alignItems: 'start', overflow: 'hidden' }">
+                <!-- Row 1: Nome | Contribuição Mensal label+campos | Remover -->
+                <div :style="{ gridColumn: 1, gridRow: 1, display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }">
+                  <p :style="{ fontSize: '13px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: 0, wordBreak: 'break-word' }">{{ fundo.nome }}</p>
+                </div>
+                <!-- Contribuição Mensal - componente cp idêntico ao React -->
+                <div :style="{ gridColumn: 2, gridRow: 1, display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, justifyContent: 'flex-end', whiteSpace: 'nowrap' }">
+                  <span :style="{ fontSize: '10px', fontWeight: 600, color: 'oklch(45% 0.04 250)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }">Contribuição Mensal:</span>
+                  <div :style="{ display: 'flex', alignItems: 'center', gap: '3px' }">
+                    <span :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', whiteSpace: 'nowrap' }">Valor Atribuído</span>
                     <template v-if="isEditing">
-                      <input type="text" :value="fundo.percentual" @input="(e) => handleContribPercentualChange(plano, sub, fundo, (e.target as HTMLInputElement).value)" :style="{ width: '44px', border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '3px 5px', fontSize: '12px', textAlign: 'center', outline: 'none' }" />
-                      <span :style="{ fontSize: '11px', color: 'oklch(55% 0.02 250)' }">%</span>
-                      <input type="text" :value="fundo.valorAtribuido" @input="(e) => handleContribValorChange(plano, sub, fundo, (e.target as HTMLInputElement).value)" :style="{ width: '90px', border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '3px 5px', fontSize: '12px', textAlign: 'right', outline: 'none' }" placeholder="R$ 0,00" />
+                      <input type="text" :value="fundo.valorAtribuido" @input="(e) => handleContribValorChange(plano, sub, fundo, (e.target as HTMLInputElement).value)" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '2px 5px', fontSize: '11px', width: '76px', fontFamily: 'inherit', textAlign: 'center', outline: 'none' }" placeholder="0,00" />
                     </template>
                     <template v-else>
-                      <span :style="{ fontSize: '12px', color: 'oklch(45% 0.02 250)' }">{{ fundo.percentual }}%</span>
-                      <span :style="{ fontSize: '12px', fontWeight: 500, color: 'oklch(20% 0.05 250)' }">{{ fundo.valorAtribuido || '—' }}</span>
+                      <span :style="{ fontSize: '11px', fontWeight: 500, color: 'oklch(20% 0.05 250)', border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '1px 5px', width: '76px', textAlign: 'center', display: 'inline-block' }">{{ fundo.valorAtribuido || '0,00' }}</span>
+                    </template>
+                  </div>
+                  <div :style="{ display: 'flex', alignItems: 'center', gap: '3px' }">
+                    <span :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', whiteSpace: 'nowrap' }">Percentual Atribuído</span>
+                    <template v-if="isEditing">
+                      <div :style="{ display: 'flex', alignItems: 'center', border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', background: 'oklch(98% 0.002 260)', overflow: 'hidden', width: '52px' }">
+                        <input type="text" :value="fundo.percentual" @input="(e) => handleContribPercentualChange(plano, sub, fundo, (e.target as HTMLInputElement).value)" :style="{ border: 'none', outline: 'none', padding: '2px 2px 2px 4px', fontSize: '11px', width: '34px', textAlign: 'right', background: 'transparent', color: 'oklch(20% 0.05 250)', fontFamily: 'inherit' }" />
+                        <span :style="{ fontSize: '11px', color: 'oklch(40% 0.02 250)', paddingRight: '4px', userSelect: 'none', pointerEvents: 'none' }">%</span>
+                      </div>
+                    </template>
+                    <template v-else>
+                      <span :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '1px 5px', width: '52px', textAlign: 'center', display: 'inline-block' }">{{ fundo.percentual }}%</span>
                     </template>
                   </div>
                 </div>
@@ -491,26 +745,44 @@ const continuerDisabled = computed(() => isEditing.value)
                     </svg>
                   </button>
                 </div>
-                <!-- CNPJ -->
-                <p :style="{ gridColumn: 1, gridRow: 2, fontSize: '12px', color: 'oklch(45% 0.02 250)', margin: 0 }">{{ fundo.cnpj }}</p>
-                <!-- Aporte Inicial -->
-                <div :style="{ gridColumn: 2, gridRow: 2 }">
-                  <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', margin: '0 0 3px 0', textAlign: 'right' }">Aporte Inicial</p>
-                  <div :style="{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }">
+                <!-- Row 2: CNPJ + tarja QUALIFICADO | Aporte Inicial label+campos | (vazio) -->
+                <div :style="{ gridColumn: 1, gridRow: 2, display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flexWrap: 'nowrap' }">
+                  <p :style="{ fontSize: '12px', color: 'oklch(45% 0.02 250)', margin: 0, whiteSpace: 'nowrap' }">{{ fundo.cnpj }}</p>
+                  <span v-if="(fundo as any).qualificado" :style="{ fontSize: '10px', fontWeight: 600, color: 'oklch(50% 0.01 260)', background: 'oklch(93% 0.003 260)', border: '1px solid oklch(85% 0.005 260)', borderRadius: '3px', padding: '1px 5px', letterSpacing: '0.05em', textTransform: 'uppercase', whiteSpace: 'nowrap', flexShrink: 0 }">QUALIFICADO</span>
+                </div>
+                <!-- Aporte Inicial - componente cp idêntico ao React -->
+                <div :style="{ gridColumn: 2, gridRow: 2, display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, justifyContent: 'flex-end', whiteSpace: 'nowrap' }">
+                  <span :style="{ fontSize: '10px', fontWeight: 600, color: 'oklch(45% 0.04 250)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }">Aporte Inicial:</span>
+                  <div :style="{ display: 'flex', alignItems: 'center', gap: '3px' }">
+                    <span :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', whiteSpace: 'nowrap' }">Valor Atribuído</span>
                     <template v-if="isEditing">
-                      <input type="text" :value="fundo.percentualAporte" @input="(e) => handleAportePercentualChange(plano, sub, fundo, (e.target as HTMLInputElement).value)" :style="{ width: '44px', border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '3px 5px', fontSize: '12px', textAlign: 'center', outline: 'none' }" />
-                      <span :style="{ fontSize: '11px', color: 'oklch(55% 0.02 250)' }">%</span>
-                      <input type="text" :value="fundo.valorAporte" @input="(e) => handleAporteValorChange(plano, sub, fundo, (e.target as HTMLInputElement).value)" :style="{ width: '90px', border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '3px 5px', fontSize: '12px', textAlign: 'right', outline: 'none' }" placeholder="R$ 0,00" />
+                      <input type="text" :value="fundo.valorAporte" @input="(e) => handleAporteValorChange(plano, sub, fundo, (e.target as HTMLInputElement).value)" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '2px 5px', fontSize: '11px', width: '76px', fontFamily: 'inherit', textAlign: 'center', outline: 'none' }" placeholder="0,00" />
                     </template>
                     <template v-else>
-                      <span :style="{ fontSize: '12px', color: 'oklch(45% 0.02 250)' }">{{ fundo.percentualAporte }}%</span>
-                      <span :style="{ fontSize: '12px', fontWeight: 500, color: 'oklch(20% 0.05 250)' }">{{ fundo.valorAporte || '—' }}</span>
+                      <span :style="{ fontSize: '11px', fontWeight: 500, color: 'oklch(20% 0.05 250)', border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '1px 5px', width: '76px', textAlign: 'center', display: 'inline-block' }">{{ fundo.valorAporte || '0,00' }}</span>
+                    </template>
+                  </div>
+                  <div :style="{ display: 'flex', alignItems: 'center', gap: '3px' }">
+                    <span :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', whiteSpace: 'nowrap' }">Percentual Atribuído</span>
+                    <template v-if="isEditing">
+                      <div :style="{ display: 'flex', alignItems: 'center', border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', background: 'oklch(98% 0.002 260)', overflow: 'hidden', width: '52px' }">
+                        <input type="text" :value="fundo.percentualAporte" @input="(e) => handleAportePercentualChange(plano, sub, fundo, (e.target as HTMLInputElement).value)" :style="{ border: 'none', outline: 'none', padding: '2px 2px 2px 4px', fontSize: '11px', width: '34px', textAlign: 'right', background: 'transparent', color: 'oklch(20% 0.05 250)', fontFamily: 'inherit' }" />
+                        <span :style="{ fontSize: '11px', color: 'oklch(40% 0.02 250)', paddingRight: '4px', userSelect: 'none', pointerEvents: 'none' }">%</span>
+                      </div>
+                    </template>
+                    <template v-else>
+                      <span :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '1px 5px', width: '52px', textAlign: 'center', display: 'inline-block' }">{{ fundo.percentualAporte }}%</span>
                     </template>
                   </div>
                 </div>
-                <!-- Taxa/Rentabilidade/Classificação -->
+                <div :style="{ gridColumn: 3, gridRow: 2 }"></div>
+                <!-- Row 3: Grau de Risco (texto), Taxa Máx. Adm., Estratégia -->
                 <div :style="{ gridColumn: '1 / -1', gridRow: 3, display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'nowrap', paddingTop: '2px' }">
-                  <div v-for="item in [{ label: 'Taxa Máx. Adm.', value: (fundo as any).taxaAdmMax || fundo.taxaAdm }, { label: 'Rentabilidade', value: fundo.rentabilidade }, { label: 'Classificação', value: fundo.classificacao }]" :key="item.label" :style="{ display: 'flex', alignItems: 'center', gap: '5px' }">
+                  <div v-for="item in [
+                    { label: 'Grau de Risco', value: riscoCorParaLabel((fundo as any).riscoCor) },
+                    { label: 'Taxa Máx. Adm.', value: (fundo as any).taxaAdmMax || fundo.taxaAdm },
+                    { label: 'Estratégia', value: (fundo as any).estrategia || fundo.classificacao }
+                  ]" :key="item.label" :style="{ display: 'flex', alignItems: 'center', gap: '5px' }">
                     <span :style="{ fontSize: '11px', color: 'oklch(55% 0.02 250)', whiteSpace: 'nowrap' }">{{ item.label }}:</span>
                     <span :style="{ fontSize: '12px', fontWeight: 500, color: 'oklch(20% 0.05 250)', border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '1px 6px', background: 'oklch(97% 0.003 260)', whiteSpace: 'nowrap' }">{{ item.value || '—' }}</span>
                   </div>
@@ -533,13 +805,18 @@ const continuerDisabled = computed(() => isEditing.value)
           </div>
         </div>
 
-        <!-- Adicionar sub-plano -->
-        <button v-if="isEditing" @click="addSubPlano(plano)" :style="{ width: '100%', border: '1px dashed rgba(30,64,175,0.4)', borderRadius: '8px', padding: '12px 16px', fontSize: '13px', color: 'oklch(20% 0.05 250)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 500, marginTop: '4px', marginBottom: '8px' }">
-          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Adicionar Novo Tipo de Plano
-        </button>
+        <!-- Adicionar Novo Tipo de Plano: desabilitar se já há PGBL e VGBL ou 2+ sub-planos -->
+        <template v-if="isEditing">
+          <button
+            @click="addSubPlanoOposto(plano)"
+            :disabled="plano.subPlanos.length >= 2 || (plano.subPlanos.some((s: SubPlano) => s.tipoPlano === 'PGBL') && plano.subPlanos.some((s: SubPlano) => s.tipoPlano === 'VGBL'))"
+            :style="{ width: '100%', border: '1px dashed rgba(30,64,175,0.4)', borderRadius: '8px', padding: '12px 16px', fontSize: '13px', color: (plano.subPlanos.length >= 2 || (plano.subPlanos.some((s: SubPlano) => s.tipoPlano === 'PGBL') && plano.subPlanos.some((s: SubPlano) => s.tipoPlano === 'VGBL'))) ? 'oklch(65% 0.01 260)' : 'oklch(20% 0.05 250)', background: 'transparent', cursor: (plano.subPlanos.length >= 2 || (plano.subPlanos.some((s: SubPlano) => s.tipoPlano === 'PGBL') && plano.subPlanos.some((s: SubPlano) => s.tipoPlano === 'VGBL'))) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 500, marginTop: '4px', marginBottom: '8px', opacity: (plano.subPlanos.length >= 2 || (plano.subPlanos.some((s: SubPlano) => s.tipoPlano === 'PGBL') && plano.subPlanos.some((s: SubPlano) => s.tipoPlano === 'VGBL'))) ? 0.45 : 1 }">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Adicionar Novo Tipo de Plano
+          </button>
+        </template>
       </template>
 
       <!-- Seguro de Vida -->

@@ -29,14 +29,14 @@
           <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
         </svg>
       </template>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px 24px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px 24px;align-items:start">
         <div>
-          <p class="field-label">CPF</p>
+          <p class="field-label">CPF <span style="color:#dc2626">*</span></p>
           <input v-if="isEditing" v-model="draftProponente.cpf" class="inline-edit" />
           <p v-else class="field-value">{{ proponente.cpf || '—' }}</p>
         </div>
         <div>
-          <p class="field-label">Nome Completo</p>
+          <p class="field-label">Nome Completo <span style="color:#dc2626">*</span></p>
           <input v-if="isEditing" v-model="draftProponente.nomeCompleto" class="inline-edit" />
           <p v-else class="field-value">{{ proponente.nomeCompleto || '—' }}</p>
         </div>
@@ -46,48 +46,72 @@
           <p v-else class="field-value">{{ proponente.nomeSocial || '—' }}</p>
         </div>
         <div>
-          <p class="field-label">Data de Nascimento</p>
+          <p class="field-label">Data de Nascimento <span style="color:#dc2626">*</span></p>
           <input v-if="isEditing" type="date" v-model="draftProponente.dataNascimento" class="inline-edit" />
           <p v-else class="field-value">{{ formatDate(proponente.dataNascimento) }}</p>
         </div>
         <div>
-          <p class="field-label">Telefone</p>
+          <p class="field-label">Telefone <span style="color:#dc2626">*</span></p>
           <input v-if="isEditing" v-model="draftProponente.telefone" class="inline-edit" />
           <p v-else class="field-value">{{ proponente.telefone || '—' }}</p>
         </div>
         <div>
-          <p class="field-label">E-mail</p>
+          <p class="field-label">E-mail <span style="color:#dc2626">*</span></p>
           <input v-if="isEditing" v-model="draftProponente.email" class="inline-edit" />
           <p v-else class="field-value">{{ proponente.email || '—' }}</p>
         </div>
         <div>
-          <p class="field-label">Renda Mensal</p>
+          <p class="field-label">Renda Mensal <span style="color:#dc2626">*</span></p>
           <input v-if="isEditing" v-model="draftProponente.rendaMensal" class="inline-edit" />
           <p v-else class="field-value">{{ proponente.rendaMensal || '—' }}</p>
         </div>
-        <div>
+        <div style="position:relative">
           <p class="field-label">Ocupação</p>
-          <select v-if="isEditing" v-model="draftProponente.ocupacao" class="inline-edit" style="cursor:pointer;background-color:white;appearance:auto">
-            <option value="">— Selecione —</option>
-            <option>Assistente</option>
-            <option>Analista Júnior</option>
-            <option>Analista Pleno</option>
-            <option>Analista Sênior</option>
-            <option>Especialista</option>
-            <option>Líder</option>
-            <option>Coordenador</option>
-            <option>Supervisor</option>
-            <option>Gerente</option>
-            <option>Diretor</option>
-            <option>C-Level</option>
-          </select>
+          <template v-if="isEditing">
+            <input
+              v-model="ocupacaoSearch"
+              class="inline-edit"
+              placeholder="Digite para buscar..."
+              @focus="showOcupacaoDropdown = true"
+              @blur="onOcupacaoBlur"
+              autocomplete="off"
+            />
+            <div v-if="showOcupacaoDropdown && filteredProfissoes.length > 0" style="position:absolute;top:100%;left:0;right:0;max-height:200px;overflow-y:auto;background:#fff;border:1px solid oklch(80% 0.005 260);border-radius:6px;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,0.1)">
+              <div
+                v-for="prof in filteredProfissoes.slice(0, 50)"
+                :key="prof"
+                @mousedown.prevent="selectOcupacao(prof)"
+                style="padding:8px 12px;font-size:13px;cursor:pointer;color:oklch(20% 0.05 250)"
+                :style="prof === draftProponente.ocupacao ? 'background:oklch(95% 0.005 260);font-weight:600' : ''"
+                @mouseover="($event.target as HTMLElement).style.background='oklch(97% 0.003 260)'"
+                @mouseout="($event.target as HTMLElement).style.background=prof === draftProponente.ocupacao ? 'oklch(95% 0.005 260)' : ''"
+              >{{ prof }}</div>
+            </div>
+          </template>
           <p v-else class="field-value">{{ proponente.ocupacao || '—' }}</p>
         </div>
-        <div>
-          <p class="field-label">Empresa</p>
-          <input v-if="isEditing" v-model="draftProponente.empresa" class="inline-edit" />
-          <p v-else class="field-value">{{ proponente.empresa || '—' }}</p>
-        </div>
+        <!-- Especificação da Ocupação (quando OUTROS) - ocupa a 3ª coluna no lugar de Empresa -->
+        <template v-if="(isEditing ? draftProponente.ocupacao : proponente.ocupacao) === 'OUTROS (ESPECIFICAR)'">
+          <div>
+            <p class="field-label">Especificação da Ocupação <span style="color:#dc2626">*</span></p>
+            <input v-if="isEditing" v-model="draftProponente.especificacaoOcupacao" class="inline-edit" placeholder="Descreva a ocupação..." />
+            <p v-else class="field-value">{{ proponente.especificacaoOcupacao || '—' }}</p>
+          </div>
+          <!-- Empresa aparece na linha seguinte quando OUTROS está selecionado -->
+          <div style="grid-column: 1">
+            <p class="field-label">Empresa</p>
+            <input v-if="isEditing" v-model="draftProponente.empresa" class="inline-edit" />
+            <p v-else class="field-value">{{ proponente.empresa || '—' }}</p>
+          </div>
+        </template>
+        <!-- Quando não é OUTROS, Empresa fica na 3ª coluna da mesma linha -->
+        <template v-else>
+          <div>
+            <p class="field-label">Empresa</p>
+            <input v-if="isEditing" v-model="draftProponente.empresa" class="inline-edit" />
+            <p v-else class="field-value">{{ proponente.empresa || '—' }}</p>
+          </div>
+        </template>
       </div>
     </SectionWithIcon>
 
@@ -128,13 +152,11 @@
         </svg>
       </template>
       <div style="background:#eff6ff;border:1px solid #dbeafe;border-radius:8px;padding:12px 16px">
-        <input v-if="isEditing" v-model="draft.cenario.titulo" class="inline-edit" style="margin-bottom:12px;font-weight:600" />
-        <p v-else style="font-size:13px;font-weight:600;color:oklch(20% 0.05 250);margin-bottom:12px">{{ data.cenario.titulo }}</p>
+        <p style="font-size:13px;font-weight:600;color:oklch(20% 0.05 250);margin-bottom:12px">{{ data.cenario.titulo }}</p>
         <ul style="display:flex;flex-direction:column;gap:6px;list-style:none;padding:0;margin:0">
           <li v-for="(item, i) in data.cenario.itens" :key="i" style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#1e40af">
             <span style="margin-top:6px;width:6px;height:6px;border-radius:50%;background:#1e40af;flex-shrink:0;display:inline-block" />
-            <input v-if="isEditing" v-model="draft.cenario.itens[i]" class="inline-edit" />
-            <span v-else>{{ item }}</span>
+            <span>{{ item }}</span>
           </li>
         </ul>
       </div>
@@ -155,19 +177,22 @@
             </svg>
           </div>
           <div style="flex:1;min-width:0">
-            <div v-if="isEditing" style="display:flex;flex-direction:column;gap:6px">
-              <input v-model="draft.vulnerabilidades[i].titulo" class="inline-edit" style="font-weight:600" />
-              <textarea v-model="draft.vulnerabilidades[i].descricao" rows="2" class="textarea-edit" />
-              <div style="display:flex;align-items:center;gap:4px">
-                <span style="font-size:12px;color:oklch(45% 0.02 250);white-space:nowrap">Solução Recomendada:</span>
-                <input v-model="draft.vulnerabilidades[i].solucao" class="inline-edit" />
-              </div>
-            </div>
-            <template v-else>
+            <div style="display:flex;flex-direction:column;gap:6px">
               <p style="font-size:13px;font-weight:600;color:oklch(20% 0.05 250);margin:0 0 2px">{{ vuln.titulo }}</p>
               <p style="font-size:12px;color:oklch(45% 0.02 250);margin:0 0 4px">{{ vuln.descricao }}</p>
-              <p style="font-size:12px;color:#1e40af;font-weight:500;margin:0">Solução Recomendada: <strong>{{ vuln.solucao }}</strong></p>
-            </template>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span style="font-size:12px;color:oklch(45% 0.02 250);white-space:nowrap">Solução Recomendada:</span>
+                <select v-if="isEditing" v-model="draft.vulnerabilidades[i].solucao" style="font-size:12px;color:#1e40af;font-weight:500;border:1px solid oklch(80% 0.005 260);border-radius:4px;padding:3px 6px;background:#fff;max-width:280px;cursor:pointer">
+                  <option value="">Selecione...</option>
+                  <option>Seguro de Vida Vitalício</option>
+                  <option>Seguro de Invalidez + DIT</option>
+                  <option>Cobertura para Doenças Graves</option>
+                  <option>Seguro para Custeio de Inventário</option>
+                  <option>Aporte em Previdência Privada</option>
+                </select>
+                <span v-else style="font-size:12px;color:#1e40af;font-weight:500"><strong>{{ vuln.solucao }}</strong></span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -181,149 +206,169 @@
         </svg>
       </template>
       <div style="display:flex;flex-direction:column">
-        <div v-for="(item, i) in data.timeline" :key="i" style="display:flex;gap:16px;padding:16px 0" :style="i < data.timeline.length - 1 ? 'border-bottom:1px solid oklch(92% 0.003 260)' : ''">
-          <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:4px">
-            <div style="width:10px;height:10px;border-radius:50%;background:#1e3a8a;box-shadow:0 0 0 3px #bfdbfe;flex-shrink:0" />
-            <div style="width:2px;flex:1;background:oklch(90% 0.004 286);margin-top:4px" />
-          </div>
-          <div style="flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;padding-bottom:4px">
-            <div style="display:flex;flex-direction:column;gap:2px">
-              <p style="font-size:12px;font-weight:600;color:#1e40af;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 2px">{{ item.periodo }}</p>
-              <div v-if="isEditing" style="display:flex;flex-direction:column;gap:4px">
-                <input v-model="draft.timeline[i].titulo" class="inline-edit" style="font-weight:600" />
-                <textarea v-model="draft.timeline[i].descricao" rows="2" class="textarea-edit" />
+        <template v-for="(item, i) in data.timeline" :key="i">
+          <!-- Para os dois últimos itens (LONGO PRAZO), agrupa em uma única linha com título unificado -->
+          <template v-if="normalizePeriodo(item.periodo) === 'LONGO PRAZO' && i > 0 && normalizePeriodo(data.timeline[i-1].periodo) === 'LONGO PRAZO'">
+            <!-- segundo item do Longo Prazo: já foi renderizado junto com o primeiro, pular -->
+          </template>
+          <template v-else-if="normalizePeriodo(item.periodo) === 'LONGO PRAZO' && i < data.timeline.length - 1 && normalizePeriodo(data.timeline[i+1].periodo) === 'LONGO PRAZO'">
+            <!-- Primeiro item do Longo Prazo: renderiza os dois juntos -->
+            <div style="display:flex;gap:16px;padding:16px 0">
+              <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:4px">
+                <div style="width:10px;height:10px;border-radius:50%;background:#1e3a8a;box-shadow:0 0 0 3px #bfdbfe;flex-shrink:0" />
+                <div style="width:2px;flex:1;background:oklch(90% 0.004 286);margin-top:4px" />
               </div>
-              <template v-else>
-                <p style="font-size:14px;font-weight:600;color:oklch(20% 0.05 250);margin:0 0 2px">{{ item.titulo }}</p>
-                <p style="font-size:12px;color:oklch(45% 0.02 250);line-height:1.5;margin:0">{{ item.descricao }}</p>
-              </template>
+              <div style="flex:1;padding-bottom:4px">
+                <p style="font-size:12px;font-weight:600;color:#1e40af;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 10px">LONGO PRAZO</p>
+                <!-- Layout: Objetivo (esq) + Risco (dir), por linha -->
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <!-- Linha 1: Transição de Carreira (esq) + Risco Financeiro (dir) -->
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start">
+                    <div style="display:flex;flex-direction:column;gap:2px">
+                      <div v-if="isEditing" style="display:flex;flex-direction:column;gap:4px">
+                        <input v-model="draft.timeline[i].titulo" class="inline-edit" style="font-weight:600" />
+                        <textarea v-model="draft.timeline[i].descricao" rows="2" class="textarea-edit" />
+                      </div>
+                      <template v-else>
+                        <p style="font-size:14px;font-weight:600;color:oklch(20% 0.05 250);margin:0 0 2px">{{ item.titulo }}</p>
+                        <p style="font-size:12px;color:oklch(45% 0.02 250);line-height:1.5;margin:0">{{ item.descricao }}</p>
+                      </template>
+                    </div>
+                    <div style="border-radius:8px;border:1px solid #bfdbfe;background:rgba(239,246,255,0.8);padding:12px;font-size:12px;color:#1e40af">
+                      <span style="display:inline-block;background:#dbeafe;color:#1e40af;font-weight:700;font-size:11px;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">{{ item.riscoLabel }}</span>
+                      <ul style="display:flex;flex-direction:column;gap:3px;margin:4px 0 0;padding:0;list-style:none">
+                        <li v-for="(risco, j) in item.riscos" :key="j" style="display:flex;align-items:flex-start;gap:6px;font-size:12px;color:#1e40af;line-height:1.4">
+                          <span style="margin-top:5px;width:4px;height:4px;border-radius:50%;background:#1e40af;flex-shrink:0;display:inline-block" />
+                          <input v-if="isEditing" v-model="draft.timeline[i].riscos[j]" class="inline-edit" />
+                          <span v-else>{{ risco }}</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  <!-- Linha 2: Aposentadoria Planejada (esq) + Risco Longevidade (dir) -->
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start">
+                    <div style="display:flex;flex-direction:column;gap:2px">
+                      <div v-if="isEditing" style="display:flex;flex-direction:column;gap:4px">
+                        <input v-model="draft.timeline[i+1].titulo" class="inline-edit" style="font-weight:600" />
+                        <textarea v-model="draft.timeline[i+1].descricao" rows="2" class="textarea-edit" />
+                      </div>
+                      <template v-else>
+                        <p style="font-size:14px;font-weight:600;color:oklch(20% 0.05 250);margin:0 0 2px">{{ data.timeline[i+1].titulo }}</p>
+                        <p style="font-size:12px;color:oklch(45% 0.02 250);line-height:1.5;margin:0">{{ data.timeline[i+1].descricao }}</p>
+                      </template>
+                    </div>
+                    <div style="border-radius:8px;border:1px solid #bfdbfe;background:rgba(239,246,255,0.8);padding:12px;font-size:12px;color:#1e40af">
+                      <span style="display:inline-block;background:#dbeafe;color:#1e40af;font-weight:700;font-size:11px;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">{{ data.timeline[i+1].riscoLabel }}</span>
+                      <ul style="display:flex;flex-direction:column;gap:3px;margin:4px 0 0;padding:0;list-style:none">
+                        <li v-for="(risco, j) in data.timeline[i+1].riscos" :key="j" style="display:flex;align-items:flex-start;gap:6px;font-size:12px;color:#1e40af;line-height:1.4">
+                          <span style="margin-top:5px;width:4px;height:4px;border-radius:50%;background:#1e40af;flex-shrink:0;display:inline-block" />
+                          <input v-if="isEditing" v-model="draft.timeline[i+1].riscos[j]" class="inline-edit" />
+                          <span v-else>{{ risco }}</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div style="border-radius:8px;border:1px solid #bfdbfe;background:rgba(239,246,255,0.8);padding:12px;font-size:12px;color:#1e40af">
-              <span style="display:inline-block;background:#dbeafe;color:#1e40af;font-weight:700;font-size:11px;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">{{ item.riscoLabel }}</span>
-              <ul style="display:flex;flex-direction:column;gap:3px;margin:4px 0 0;padding:0;list-style:none">
-                <li v-for="(risco, j) in item.riscos" :key="j" style="display:flex;align-items:flex-start;gap:6px;font-size:12px;color:#1e40af;line-height:1.4">
-                  <span style="margin-top:5px;width:4px;height:4px;border-radius:50%;background:#1e40af;flex-shrink:0;display:inline-block" />
-                  <input v-if="isEditing" v-model="draft.timeline[i].riscos[j]" class="inline-edit" />
-                  <span v-else>{{ risco }}</span>
-                </li>
-              </ul>
+          </template>
+          <!-- Itens normais (não Longo Prazo) -->
+          <template v-else-if="normalizePeriodo(item.periodo) !== 'LONGO PRAZO'">
+            <div style="display:flex;gap:16px;padding:16px 0;border-bottom:1px solid oklch(92% 0.003 260)">
+              <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:4px">
+                <div style="width:10px;height:10px;border-radius:50%;background:#1e3a8a;box-shadow:0 0 0 3px #bfdbfe;flex-shrink:0" />
+                <div style="width:2px;flex:1;background:oklch(90% 0.004 286);margin-top:4px" />
+              </div>
+              <div style="flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;padding-bottom:4px">
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <p style="font-size:12px;font-weight:600;color:#1e40af;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 2px">{{ normalizePeriodo(item.periodo) }}</p>
+                  <div v-if="isEditing" style="display:flex;flex-direction:column;gap:4px">
+                    <input v-model="draft.timeline[i].titulo" class="inline-edit" style="font-weight:600" />
+                    <textarea v-model="draft.timeline[i].descricao" rows="2" class="textarea-edit" />
+                  </div>
+                  <template v-else>
+                    <p style="font-size:14px;font-weight:600;color:oklch(20% 0.05 250);margin:0 0 2px">{{ item.titulo }}</p>
+                    <p style="font-size:12px;color:oklch(45% 0.02 250);line-height:1.5;margin:0">{{ item.descricao }}</p>
+                  </template>
+                </div>
+                <div style="border-radius:8px;border:1px solid #bfdbfe;background:rgba(239,246,255,0.8);padding:12px;font-size:12px;color:#1e40af">
+                  <span style="display:inline-block;background:#dbeafe;color:#1e40af;font-weight:700;font-size:11px;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">{{ item.riscoLabel }}</span>
+                  <ul style="display:flex;flex-direction:column;gap:3px;margin:4px 0 0;padding:0;list-style:none">
+                    <li v-for="(risco, j) in item.riscos" :key="j" style="display:flex;align-items:flex-start;gap:6px;font-size:12px;color:#1e40af;line-height:1.4">
+                      <span style="margin-top:5px;width:4px;height:4px;border-radius:50%;background:#1e40af;flex-shrink:0;display:inline-block" />
+                      <input v-if="isEditing" v-model="draft.timeline[i].riscos[j]" class="inline-edit" />
+                      <span v-else>{{ risco }}</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </template>
+        </template>
         <div style="background:oklch(97% 0.002 260);border:1px solid oklch(90% 0.005 260);border-radius:8px;padding:12px 16px;margin-top:4px">
           <span style="font-size:12px;font-weight:600;color:oklch(20% 0.05 250);display:block;margin-bottom:4px">Visão de Longo Prazo:</span>
-          <textarea v-if="isEditing" v-model="draft.visaoLongoPrazo" rows="2" class="textarea-edit" />
-          <span v-else style="font-size:12px;color:oklch(45% 0.02 250);font-style:italic;line-height:1.5;display:block">
-            {{ data.visaoLongoPrazo || 'Cada etapa exige preparação financeira específica. O acúmulo de capital deve ser constante para suportar os picos de despesa com educação e saúde familiar.' }}
-          </span>
+          <span style="font-size:12px;color:oklch(45% 0.02 250);font-style:italic;line-height:1.5;display:block">Cada etapa exigirá preparação financeira específica. O acúmulo de capital deve ser constante para suportar os possíveis picos de despesas. Contar com uma previdência privada é uma ferramenta eficiente de planejamento sucessório, pois garante liquidez imediata para a família, ajudando a cobrir custos como do inventário, que podem ser altos e demorados.</span>
         </div>
       </div>
     </SectionWithIcon>
 
     <!-- 5. Soluções Propostas -->
-    <SectionWithIcon title="Soluções Propostas">
+    <SectionWithIcon>
+      <template #title>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <span style="font-size:15px;font-weight:600;color:oklch(20% 0.05 250)">Soluções Propostas</span>
+          <select v-if="isEditing" v-model="solucaoVisivel" style="font-size:12px;padding:4px 10px;border-radius:6px;border:1px solid oklch(80% 0.005 260);background:#fff;color:oklch(20% 0.05 250);cursor:pointer;outline:none">
+            <option value="ambos">Seguro de Vida + Previdência</option>
+            <option value="seguro">Seguro de Vida</option>
+            <option value="previdencia">Previdência</option>
+          </select>
+        </div>
+      </template>
       <template #icon>
         <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
         </svg>
       </template>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:16px">
-        <!-- Proteção -->
-        <div style="border:1px solid oklch(90% 0.005 260);border-radius:8px;padding:14px 16px;background:oklch(97% 0.002 260)">
-          <div v-if="isEditing" style="margin-bottom:10px">
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap">
-              <span style="font-size:13px;color:oklch(30% 0.05 250);white-space:nowrap">Destinar</span>
-              <input v-model="draft.solucoes.protecao.valor" class="inline-edit" style="width:110px" />
-              <span style="font-size:13px;color:oklch(30% 0.05 250);white-space:nowrap">(</span>
-              <input v-model="draft.solucoes.protecao.percentual" class="inline-edit" style="width:50px" />
-              <span style="font-size:13px;color:oklch(30% 0.05 250);white-space:nowrap">% do saldo) garante:</span>
+      <div :style="{ display:'grid', gridTemplateColumns: solucaoVisivel === 'ambos' ? 'repeat(auto-fit,minmax(260px,1fr))' : '1fr', gap:'16px', marginBottom:'0', alignItems:'stretch' }">
+        <!-- Proteção (Seguro de Vida) -->
+        <div v-if="solucaoVisivel === 'ambos' || solucaoVisivel === 'seguro'" style="display:flex;flex-direction:column;height:100%">
+          <p style="font-size:14px;font-weight:500;color:oklch(20% 0.05 250);margin:0 0 8px">Seguro de Vida</p>
+          <div style="border:1px solid oklch(90% 0.005 260);border-radius:8px;padding:14px 16px;background:oklch(97% 0.002 260);flex:1">
+            <p style="font-size:13px;color:oklch(30% 0.05 250);margin:0 0 10px">Este produto garante:</p>
+            <div v-for="(item, i) in data.solucoes.protecao.itens" :key="i" style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+              <CheckIcon />
+              <input v-if="isEditing" v-model="draft.solucoes.protecao.itens[i]" class="inline-edit" />
+              <span v-else style="font-size:13px;color:oklch(30% 0.05 250)">{{ item }}</span>
             </div>
-          </div>
-          <div v-else style="display:flex;align-items:center;gap:4px;margin-bottom:10px;flex-wrap:wrap">
-            <span style="font-size:13px;color:oklch(30% 0.05 250)">Destinar</span>
-            <strong style="font-size:12px">{{ data.solucoes.protecao.valor }}/mês</strong>
-            <span style="font-size:13px;color:oklch(30% 0.05 250)">(<strong style="font-size:12px">{{ data.solucoes.protecao.percentual }}% do saldo</strong>) garante:</span>
-          </div>
-          <div v-for="(item, i) in data.solucoes.protecao.itens" :key="i" style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
-            <CheckIcon />
-            <input v-if="isEditing" v-model="draft.solucoes.protecao.itens[i]" class="inline-edit" />
-            <span v-else style="font-size:13px;color:oklch(30% 0.05 250)">{{ item }}</span>
           </div>
         </div>
         <!-- Previdência -->
-        <div style="border:1px solid oklch(90% 0.005 260);border-radius:8px;padding:14px 16px;background:oklch(97% 0.002 260)">
-          <div v-if="isEditing" style="margin-bottom:10px">
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap">
-              <span style="font-size:13px;color:oklch(30% 0.05 250);white-space:nowrap">E destinando mais</span>
-              <input v-model="draft.solucoes.previdencia.valor" class="inline-edit" style="width:110px" />
-              <span style="font-size:13px;color:oklch(30% 0.05 250);white-space:nowrap">(</span>
-              <input v-model="draft.solucoes.previdencia.percentual" class="inline-edit" style="width:50px" />
-              <span style="font-size:13px;color:oklch(30% 0.05 250);white-space:nowrap">% do saldo) garante:</span>
+        <div v-if="solucaoVisivel === 'ambos' || solucaoVisivel === 'previdencia'" style="display:flex;flex-direction:column;height:100%">
+          <p style="font-size:14px;font-weight:500;color:oklch(20% 0.05 250);margin:0 0 8px">Previdência Privada</p>
+          <div style="border:1px solid oklch(90% 0.005 260);border-radius:8px;padding:14px 16px;background:oklch(97% 0.002 260);flex:1">
+            <p style="font-size:13px;color:oklch(30% 0.05 250);margin:0 0 10px">Este produto garante:</p>
+            <div v-for="(item, i) in data.solucoes.previdencia.itens" :key="i" style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+              <CheckIcon />
+              <input v-if="isEditing" v-model="draft.solucoes.previdencia.itens[i]" class="inline-edit" />
+              <span v-else style="font-size:13px;color:oklch(30% 0.05 250)">{{ item }}</span>
             </div>
+            <p style="font-size:12px;color:oklch(45% 0.02 250);line-height:1.6;border-top:1px solid oklch(90% 0.005 260);padding-top:10px;margin:0">
+              Com <strong>Benefício Fiscal</strong> relevante <strong>no plano PGBL</strong>. As contribuições podem ser abatidas da base de cálculo do Imposto de Renda, com possibilidade de <strong>dedução de até 12%</strong>.<br /><br />
+              E <strong>nos planos PGBL e VGBL</strong> a tributação é realizada apenas no momento do resgate ou da concessão de renda.
+            </p>
           </div>
-          <div v-else style="display:flex;align-items:center;gap:4px;margin-bottom:10px;flex-wrap:wrap">
-            <span style="font-size:13px;color:oklch(30% 0.05 250)">E destinando mais</span>
-            <strong style="font-size:12px">{{ data.solucoes.previdencia.valor }}/mês</strong>
-            <span style="font-size:13px;color:oklch(30% 0.05 250)">(<strong style="font-size:12px">{{ data.solucoes.previdencia.percentual }}% do saldo</strong>) garante:</span>
-          </div>
-          <div v-for="(item, i) in data.solucoes.previdencia.itens" :key="i" style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-            <CheckIcon />
-            <input v-if="isEditing" v-model="draft.solucoes.previdencia.itens[i]" class="inline-edit" />
-            <span v-else style="font-size:13px;color:oklch(30% 0.05 250)">{{ item }}</span>
-          </div>
-          <textarea v-if="isEditing" v-model="draft.solucoes.previdencia.citacao" rows="2" class="textarea-edit" />
-          <p v-else style="font-size:12px;color:oklch(45% 0.02 250);font-style:italic;line-height:1.5;border-top:1px solid oklch(90% 0.005 260);padding-top:10px;margin:0">
-            "{{ data.solucoes.previdencia.citacao }}"
-          </p>
         </div>
-      </div>
-      <!-- Investimento Mensal -->
-      <div style="border:1px solid oklch(90% 0.005 260);border-radius:8px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;background:#fff">
-        <div>
-          <p style="font-size:14px;font-weight:500;color:oklch(20% 0.05 250);margin:0">Investimento Mensal</p>
-          <p style="font-size:12px;color:oklch(45% 0.02 250);margin:0">Apenas 30% do seu saldo mensal</p>
-        </div>
-        <span style="font-size:13px;font-weight:600;color:oklch(20% 0.05 250)">R$ {{ totalInvestimento }}</span>
       </div>
     </SectionWithIcon>
 
-    <!-- 6. O Que Você Protege + O Que Você Garante -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:0">
-      <div class="section-card" style="margin-bottom:0">
-        <h3 style="font-size:15px;font-weight:600;color:oklch(20% 0.05 250);margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid oklch(90% 0.005 260)">O Que Você Protege</h3>
-        <div>
-          <div v-for="(item, i) in data.protege" :key="i" style="display:flex;justify-content:space-between;align-items:flex-start;padding:12px 0;gap:8px" :style="i < data.protege.length - 1 ? 'border-bottom:1px solid rgba(226,232,240,0.6)' : ''">
-            <div>
-              <div v-if="isEditing" style="display:flex;flex-direction:column;gap:4px">
-                <input v-model="draft.protege[i].titulo" class="inline-edit" />
-                <input v-model="draft.protege[i].subtitulo" class="inline-edit" />
-              </div>
-              <template v-else>
-                <p style="font-size:13px;font-weight:500;color:oklch(20% 0.05 250);margin:0">{{ item.titulo }}</p>
-                <p style="font-size:11px;color:oklch(45% 0.02 250);margin:0">{{ item.subtitulo }}</p>
-              </template>
-            </div>
-            <span style="font-size:13px;font-weight:600;color:oklch(20% 0.05 250);white-space:nowrap">
-              <input v-if="isEditing" v-model="draft.protege[i].valor" class="inline-edit" />
-              <template v-else>{{ item.valor }}</template>
-            </span>
-          </div>
-        </div>
-      </div>
-      <div class="section-card" style="margin-bottom:0">
-        <h3 style="font-size:15px;font-weight:600;color:oklch(20% 0.05 250);margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid oklch(90% 0.005 260)">O Que Você Garante</h3>
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">
-          <CheckIcon />
-          <span style="font-size:13px;font-weight:600;color:#16a34a">Com Proteção</span>
-        </div>
-        <div>
-          <div v-for="(item, i) in data.garante.comProtecao" :key="i" style="display:flex;align-items:center;gap:8px;padding:12px 0" :style="i < data.garante.comProtecao.length - 1 ? 'border-bottom:1px solid rgba(226,232,240,0.6)' : ''">
-            <CheckIcon />
-            <input v-if="isEditing" v-model="draft.garante.comProtecao[i]" class="inline-edit" />
-            <span v-else style="font-size:13px;color:oklch(20% 0.05 250);flex:1">{{ item }}</span>
-          </div>
-        </div>
-      </div>
+    <!-- Blocos O Que Você Protege e O Que Você Garante removidos conforme solicitado -->
+
+    <!-- Erros de validação -->
+    <div v-if="validationErrors.length > 0" style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px 16px;margin-top:16px">
+      <p style="font-size:13px;font-weight:600;color:#dc2626;margin:0 0 4px">Preencha os campos obrigatórios antes de salvar:</p>
+      <ul style="margin:0;padding-left:16px">
+        <li v-for="err in validationErrors" :key="err" style="font-size:13px;color:#dc2626">{{ err }}</li>
+      </ul>
     </div>
 
     <!-- Botões de ação -->
@@ -350,15 +395,44 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useJornadaStore } from '~/stores/jornada'
+import { PROFISSOES } from '~/data/profissoesData'
 import type { ResumoData } from '~/stores/jornada'
 
 const emit = defineEmits<{ next: []; 'editing-change': [editing: boolean] }>()
+
+function normalizePeriodo(p: string): string {
+  if (p === 'PRÓXIMOS 3-5 ANOS') return 'CURTO PRAZO'
+  if (p === 'PRÓXIMOS 5-10 ANOS') return 'MÉDIO PRAZO'
+  if (p === 'PRÓXIMOS 10-20 ANOS' || p === 'EM 20 ANOS (60 ANOS)') return 'LONGO PRAZO'
+  return p
+}
 
 const store = useJornadaStore()
 
 const isEditing = ref(false)
 const draft = ref<ResumoData>(JSON.parse(JSON.stringify(store.resumoData)))
 const draftProponente = ref({ ...store.detalhamentoData.proponente })
+const solucaoVisivel = ref<'ambos' | 'seguro' | 'previdencia'>((store.resumoData.produtoSelecionado as 'ambos' | 'seguro' | 'previdencia') || 'ambos')
+
+// Ocupação com busca
+const ocupacaoSearch = ref('')
+const showOcupacaoDropdown = ref(false)
+const filteredProfissoes = computed(() => {
+  const q = ocupacaoSearch.value.trim().toUpperCase()
+  if (!q) return PROFISSOES.slice(0, 50)
+  return PROFISSOES.filter(p => p.includes(q))
+})
+function selectOcupacao(prof: string) {
+  draftProponente.value.ocupacao = prof
+  ocupacaoSearch.value = prof
+  showOcupacaoDropdown.value = false
+}
+function onOcupacaoBlur() {
+  setTimeout(() => { showOcupacaoDropdown.value = false }, 150)
+}
+
+// Erros de validação
+const validationErrors = ref<string[]>([])
 
 const data = computed(() => isEditing.value ? draft.value : store.resumoData)
 const proponente = computed(() => isEditing.value ? draftProponente.value : store.detalhamentoData.proponente)
@@ -383,18 +457,37 @@ const formatDate = (d: string) => {
 const handleEdit = () => {
   draft.value = JSON.parse(JSON.stringify(store.resumoData))
   draftProponente.value = { ...store.detalhamentoData.proponente }
+  ocupacaoSearch.value = store.detalhamentoData.proponente.ocupacao || ''
+  validationErrors.value = []
   isEditing.value = true
   emit('editing-change', true)
 }
 
 const handleCancel = () => {
+  validationErrors.value = []
   isEditing.value = false
   emit('editing-change', false)
 }
 
 const handleSave = () => {
+  // Validação de campos obrigatórios
+  const erros: string[] = []
+  if (!draftProponente.value.cpf?.trim()) erros.push('CPF')
+  if (!draftProponente.value.nomeCompleto?.trim()) erros.push('Nome Completo')
+  if (!draftProponente.value.dataNascimento?.trim()) erros.push('Data de Nascimento')
+  if (!draftProponente.value.telefone?.trim()) erros.push('Telefone')
+  if (!draftProponente.value.email?.trim()) erros.push('E-mail')
+  if (!draftProponente.value.rendaMensal?.trim()) erros.push('Renda Mensal')
+  if (draftProponente.value.ocupacao === 'OUTROS (ESPECIFICAR)' && !draftProponente.value.especificacaoOcupacao?.trim()) erros.push('Especificação da Ocupação')
+  if (erros.length > 0) {
+    validationErrors.value = erros
+    return
+  }
+  validationErrors.value = []
+  draft.value.produtoSelecionado = solucaoVisivel.value
   store.saveResumoData(draft.value)
   store.saveDetalhamentoData({ ...store.detalhamentoData, proponente: draftProponente.value })
+  store.setProdutoSelecionado(solucaoVisivel.value)
   isEditing.value = false
   emit('editing-change', false)
 }
