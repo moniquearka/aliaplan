@@ -8,7 +8,7 @@ function normalizePeriodo(p: string): string {
   return p
 }
 import { HORIZONTE_VALORES } from '~/data/fundosData'
-import type { Plano, Cobertura, FundoSelecionado, SeguroVidaData } from '~/stores/jornada'
+import type { Plano, Cobertura, FundoSelecionado, SeguroVidaData, Assistencias } from '~/stores/jornada'
 
 const emit = defineEmits<{ back: [] }>()
 const store = useJornadaStore()
@@ -375,7 +375,7 @@ async function handleSalvar() {
                 <p :style="{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'oklch(40% 0.05 250)', marginBottom: '8px' }">Preferência do Proponente</p>
                 <div :style="{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }">
                   <div><span :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)' }">Vigência: </span><span :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(25% 0.05 250)' }">{{ plano.seguroVida.vigenciaGlobal || '—' }}</span></div>
-                  <div><span :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)' }">Prazo de Pagamento: </span><span :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(25% 0.05 250)' }">{{ plano.seguroVida.prazoPagamentoGlobal || '—' }}</span></div>
+                  <div><span :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)' }">Tempo de Contribuição: </span><span :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(25% 0.05 250)' }">{{ plano.seguroVida.prazoPagamentoGlobal || '—' }}</span></div>
                 </div>
               </div>
               <!-- Tabela de coberturas ativas -->
@@ -466,7 +466,7 @@ async function handleSalvar() {
                   <thead><tr :style="{ background: 'oklch(95% 0.005 260)', borderBottom: '1px solid oklch(90% 0.005 260)' }">
                     <th :style="{ textAlign: 'left', padding: '7px 16px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Cobertura</th>
                     <th :style="{ textAlign: 'center', padding: '7px 6px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Vigência</th>
-                    <th :style="{ textAlign: 'center', padding: '7px 6px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Prazo de Pagamento</th>
+                    <th :style="{ textAlign: 'center', padding: '7px 6px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Tempo de Contribuição</th>
                     <th :style="{ textAlign: 'right', padding: '7px 6px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Capital Segurado</th>
                     <th :style="{ textAlign: 'right', padding: '7px 16px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Contribuição Mensal</th>
                   </tr></thead>
@@ -480,6 +480,29 @@ async function handleSalvar() {
                     </tr>
                   </tbody>
                 </table>
+              </div>
+            </template>
+
+            <!-- Assistências & Benefícios (Seguro de Vida) -->
+            <template v-if="plano.assistencias && Object.values(plano.assistencias).some(v => v)">
+              <div :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', padding: '12px 16px', marginTop: '10px', background: 'oklch(98.5% 0.002 260)' }">
+                <p :style="{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'oklch(40% 0.05 250)', marginBottom: '8px', marginTop: 0 }">Assistências &amp; Benefícios</p>
+                <div :style="{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px' }">
+                  <template v-for="(item) in [
+                    { key: 'funeralFamiliar', label: 'Assistência Funeral Familiar' },
+                    { key: 'seguroViagem', label: 'Seguro Viagem' },
+                    { key: 'assistenciaDomiciliar', label: 'Assistência Domiciliar' },
+                    { key: 'telemedicina', label: 'Telemedicina' },
+                    { key: 'descontoFarmacia', label: 'Desconto em Farmácia' },
+                  ]" :key="item.key">
+                    <span v-if="(plano.assistencias as Assistencias)[item.key as keyof Assistencias]" :style="{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'oklch(25% 0.05 250)', fontWeight: 500 }">
+                      <span :style="{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '14px', height: '14px', borderRadius: '3px', background: '#1e40af', flexShrink: 0 }">
+                        <svg width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                      </span>
+                      {{ item.label }}
+                    </span>
+                  </template>
+                </div>
               </div>
             </template>
           </template>

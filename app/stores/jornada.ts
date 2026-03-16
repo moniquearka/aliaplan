@@ -74,6 +74,14 @@ export interface SubPlano {
   riskValue: number
 }
 
+export interface Assistencias {
+  funeralFamiliar: boolean
+  seguroViagem: boolean
+  assistenciaDomiciliar: boolean
+  telemedicina: boolean
+  descontoFarmacia: boolean
+}
+
 export interface Plano {
   id: string
   tipo: 'previdencia' | 'seguro'
@@ -86,6 +94,7 @@ export interface Plano {
   tempoContribuicao: string
   coberturas: Cobertura[]
   seguroVida?: SeguroVidaData
+  assistencias?: Assistencias
 }
 
 export interface Proponente {
@@ -234,6 +243,13 @@ const initialDetalhamentoData: DetalhamentoData = {
       produtoRecomendado: 'Horizonte',
       vigencia: 'Vitalícia',
       tempoContribuicao: '20 anos',
+      assistencias: {
+        funeralFamiliar: false,
+        seguroViagem: false,
+        assistenciaDomiciliar: false,
+        telemedicina: false,
+        descontoFarmacia: false,
+      },
       seguroVida: {
         vigenciaGlobal: 'Vitalícia',
         prazoPagamentoGlobal: '5 anos',

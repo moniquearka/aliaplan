@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { useJornadaStore } from '~/stores/jornada'
 import { FUNDOS_DISPONIVEIS, HORIZONTE_VALORES, HORIZONTE_COBERTURAS, HORIZONTE_NOMES, VIGENCIA_OPTIONS, PRAZO_PAGAMENTO_OPTIONS, COBERTURA_TOOLTIPS } from '~/data/fundosData'
-import type { Plano, SubPlano, Cobertura, FundoSelecionado, SeguroVidaData } from '~/stores/jornada'
+import type { Plano, SubPlano, Cobertura, FundoSelecionado, SeguroVidaData, Assistencias } from '~/stores/jornada'
 import SeguroVidaBlocos from '~/components/SeguroVidaBlocos.vue'
 
 const props = defineProps<{ onBack?: () => void; onNext?: () => void }>()
@@ -919,7 +919,7 @@ const continuerDisabled = computed(() => isEditing.value)
               <tr :style="{ background: 'oklch(95% 0.005 260)', borderBottom: '1px solid oklch(90% 0.005 260)' }">
                 <th :style="{ textAlign: 'left', padding: '8px 10px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Cobertura</th>
                 <th :style="{ textAlign: 'center', padding: '8px 6px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Vigência</th>
-                <th :style="{ textAlign: 'center', padding: '8px 6px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Prazo de Pagamento</th>
+                <th :style="{ textAlign: 'center', padding: '8px 6px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Tempo de Contribuição</th>
                 <th :style="{ textAlign: 'right', padding: '8px 6px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Capital Segurado</th>
                 <th :style="{ textAlign: 'right', padding: '8px 16px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Prêmio</th>
                 <th v-if="isEditing" :style="{ padding: '8px 4px' }"></th>
@@ -993,6 +993,30 @@ const continuerDisabled = computed(() => isEditing.value)
           </svg>
           Adicionar Cobertura
         </button>
+
+        <!-- Assistências & Benefícios -->
+        <div :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', padding: '16px 20px', marginTop: '12px', marginBottom: '8px', background: 'oklch(98.5% 0.002 260)' }">
+          <p :style="{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'oklch(40% 0.05 250)', marginBottom: '12px', marginTop: 0 }">Assistências &amp; Benefícios</p>
+          <div :style="{ display: 'flex', flexDirection: 'column', gap: '8px' }">
+            <template v-for="(item, idx) in [
+              { key: 'funeralFamiliar', label: 'Assistência Funeral Familiar' },
+              { key: 'seguroViagem', label: 'Seguro Viagem' },
+              { key: 'assistenciaDomiciliar', label: 'Assistência Domiciliar' },
+              { key: 'telemedicina', label: 'Telemedicina' },
+              { key: 'descontoFarmacia', label: 'Desconto em Farmácia' },
+            ]" :key="item.key">
+              <label :style="{ display: 'flex', alignItems: 'center', gap: '10px', cursor: isEditing ? 'pointer' : 'default', userSelect: 'none' }">
+                <span :style="{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '4px', border: `1.5px solid ${(plano.assistencias || {})[item.key as keyof Assistencias] ? '#1e40af' : 'oklch(75% 0.01 260)'}`, background: (plano.assistencias || {})[item.key as keyof Assistencias] ? '#1e40af' : '#fff', flexShrink: 0, transition: 'all 0.15s' }"
+                  @click="() => { if (!isEditing) return; const p = draft.planos.find((x: Plano) => x.id === plano.id); if (p) { if (!p.assistencias) p.assistencias = { funeralFamiliar: false, seguroViagem: false, assistenciaDomiciliar: false, telemedicina: false, descontoFarmacia: false }; (p.assistencias as any)[item.key] = !(p.assistencias as any)[item.key] } }">
+                  <svg v-if="(plano.assistencias || {})[item.key as keyof Assistencias]" width="11" height="11" viewBox="0 0 12 12" fill="none">
+                    <path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </span>
+                <span :style="{ fontSize: '13px', color: (plano.assistencias || {})[item.key as keyof Assistencias] ? 'oklch(20% 0.05 250)' : 'oklch(45% 0.02 250)', fontWeight: (plano.assistencias || {})[item.key as keyof Assistencias] ? 500 : 400 }">{{ item.label }}</span>
+              </label>
+            </template>
+          </div>
+        </div>
       </template>
     </div>
 
