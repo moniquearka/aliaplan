@@ -370,10 +370,21 @@ async function handleSalvar() {
           <template v-else>
             <!-- Nova estrutura seguroVida -->
             <template v-if="plano.seguroVida">
+              <!-- Produto Recomendado -->
+              <div v-if="plano.produtoRecomendado" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', padding: '10px 16px', marginBottom: '10px', background: 'oklch(97.5% 0.002 260)', display: 'flex', alignItems: 'center', gap: '12px' }">
+                <span :style="{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'oklch(40% 0.05 250)', whiteSpace: 'nowrap' }">Produto Recomendado:</span>
+                <span :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)' }">{{ plano.produtoRecomendado }}</span>
+              </div>
+              <!-- Caixa descrição Horizonte -->
+              <div v-if="plano.produtoRecomendado === 'Horizonte'" :style="{ border: '1px solid oklch(85% 0.01 250)', borderRadius: '8px', padding: '12px 16px', marginBottom: '10px', background: 'oklch(96% 0.005 250)' }">
+                <p :style="{ fontSize: '11px', color: 'oklch(30% 0.05 250)', margin: 0, lineHeight: 1.6 }">
+                  O Horizonte é um Seguro de Vida Individual que oferece coberturas de Morte e Invalidez com a possibilidade de inclusão de coberturas adicionais, garantindo proteção financeira personalizada para o segurado e sua família. Administrado pela Icatu Seguros S.A., CNPJ 42.283.770/0001-39.
+                </p>
+              </div>
               <!-- Preferência do Proponente -->
               <div :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', padding: '12px 16px', marginBottom: '10px', background: 'oklch(97.5% 0.002 260)' }">
                 <p :style="{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'oklch(40% 0.05 250)', marginBottom: '8px' }">Preferência do Proponente</p>
-                <div :style="{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }">
+                <div :style="{ display: 'flex', flexWrap: 'wrap', gap: '4px 24px' }">
                   <div><span :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)' }">Vigência: </span><span :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(25% 0.05 250)' }">{{ plano.seguroVida.vigenciaGlobal || '—' }}</span></div>
                   <div><span :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)' }">Tempo de Contribuição: </span><span :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(25% 0.05 250)' }">{{ plano.seguroVida.prazoPagamentoGlobal || '—' }}</span></div>
                 </div>
@@ -484,25 +495,46 @@ async function handleSalvar() {
             </template>
 
             <!-- Assistências & Benefícios (Seguro de Vida) -->
-            <template v-if="plano.assistencias && Object.values(plano.assistencias).some(v => v)">
+            <template v-if="plano.seguroVida">
               <div :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', padding: '12px 16px', marginTop: '10px', background: 'oklch(98.5% 0.002 260)' }">
-                <p :style="{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'oklch(40% 0.05 250)', marginBottom: '8px', marginTop: 0 }">Assistências &amp; Benefícios</p>
-                <div :style="{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px' }">
-                  <template v-for="(item) in [
-                    { key: 'funeralFamiliar', label: 'Assistência Funeral Familiar' },
-                    { key: 'seguroViagem', label: 'Seguro Viagem' },
-                    { key: 'assistenciaDomiciliar', label: 'Assistência Domiciliar' },
-                    { key: 'telemedicina', label: 'Telemedicina' },
-                    { key: 'descontoFarmacia', label: 'Desconto em Farmácia' },
-                  ]" :key="item.key">
-                    <span v-if="(plano.assistencias as Assistencias)[item.key as keyof Assistencias]" :style="{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'oklch(25% 0.05 250)', fontWeight: 500 }">
-                      <span :style="{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '14px', height: '14px', borderRadius: '3px', background: '#1e40af', flexShrink: 0 }">
-                        <svg width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                      </span>
-                      {{ item.label }}
-                    </span>
-                  </template>
+                <p :style="{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'oklch(40% 0.05 250)', marginBottom: '10px', marginTop: 0 }">Benefícios desse produto</p>
+                <div :style="{ display: 'flex', flexDirection: 'column', gap: '10px' }">
+                  <!-- Assistência Domiciliar -->
+                  <div>
+                    <p :style="{ fontSize: '11px', fontWeight: 700, color: 'oklch(25% 0.05 250)', margin: '0 0 3px 0' }">Assistência Domiciliar</p>
+                    <p :style="{ fontSize: '11px', color: 'oklch(40% 0.02 250)', margin: 0, lineHeight: 1.55 }">Com o envio de profissionais para reparos domésticos e proteção (encanador, eletricista, chaveiro, vigilante), além de despesas com restaurante, lavanderia e veículo de mudança caso a residência esteja inabitável.</p>
+                  </div>
+                  <!-- Seguro Viagem -->
+                  <div>
+                    <p :style="{ fontSize: '11px', fontWeight: 700, color: 'oklch(25% 0.05 250)', margin: '0 0 3px 0' }">Seguro Viagem</p>
+                    <p :style="{ fontSize: '11px', color: 'oklch(40% 0.02 250)', margin: '0 0 6px 0', lineHeight: 1.55 }">São coberturas como despesas médico-hospitalares e odontológicas em viagem ao exterior, traslado médico e acompanhante em caso de hospitalização, além de serviços como localização de bagagem e orientação em caso de perda de documentos entre outros.</p>
+                    <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: '0 0 2px 0', lineHeight: 1.5 }">Este Seguro Viagem é garantido pela HERO Corretora de Seguros LTDA – Código SUSEP: 212116101.</p>
+                    <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: '0 0 2px 0', lineHeight: 1.5 }">Representante de Seguro: HERO MGA SERVIÇOS LTDA – CNPJ: 45.385.865/0001-51.</p>
+                    <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5 }">Seguradora GENERALI BRASIL SEGUROS S.A. – CNPJ: 33.072.307/0001-57 – Código SUSEP: 0590-8, processo SUSEP 15414.648189/2023-26.</p>
+                  </div>
                 </div>
+                <!-- Assistências marcadas -->
+                <template v-if="plano.assistencias && Object.values(plano.assistencias).some(v => v)">
+                  <div :style="{ borderTop: '1px solid oklch(90% 0.005 260)', marginTop: '10px', paddingTop: '10px' }">
+                    <p :style="{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'oklch(40% 0.05 250)', margin: '0 0 6px 0' }">Assistências Selecionadas</p>
+                    <div :style="{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px' }">
+                      <template v-for="(item) in [
+                        { key: 'funeralFamiliar', label: 'Assistência Funeral Familiar' },
+                        { key: 'seguroViagem', label: 'Seguro Viagem' },
+                        { key: 'assistenciaDomiciliar', label: 'Assistência Domiciliar' },
+                        { key: 'telemedicina', label: 'Telemedicina' },
+                        { key: 'descontoFarmacia', label: 'Desconto em Farmácia' },
+                      ]" :key="item.key">
+                        <span v-if="(plano.assistencias as Assistencias)[item.key as keyof Assistencias]" :style="{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'oklch(25% 0.05 250)', fontWeight: 500 }">
+                          <span :style="{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '14px', height: '14px', borderRadius: '3px', background: '#1e40af', flexShrink: 0 }">
+                            <svg width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                          </span>
+                          {{ item.label }}
+                        </span>
+                      </template>
+                    </div>
+                  </div>
+                </template>
               </div>
             </template>
           </template>

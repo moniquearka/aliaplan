@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { SeguroVidaData, CoberturaSeguro } from '~/stores/jornada'
 import {
   calcContribuicaoMensal, calcContribuicaoAnual,
@@ -152,6 +152,43 @@ const elegivelDG = computed(() => isElegivelPorIdade('dg', props.idadeProponente
 const elegivelDIH = computed(() => isElegivelPorIdade('dih', props.idadeProponente))
 const elegivelDIT = computed(() => isElegivelPorIdade('dit', props.idadeProponente))
 
+// ── Visibilidade condicional dos blocos de Morte ──────────────────────────────
+// Quando Vigência contém 'Temporária': bloco 1 vira 'Morte Básica', bloco 2 some
+// Quando Vigência = 'Vitalícia' e Prazo = '5 anos': bloco 2 some
+const isTemporaria = computed(() => (props.modelValue.vigenciaGlobal || '').toLowerCase().includes('temporária') || (props.modelValue.vigenciaGlobal || '').toLowerCase().includes('temporaria'))
+const mostrarMorteTemp = computed(() => {
+  if (isTemporaria.value) return false
+  const prazo = props.modelValue.prazoPagamentoGlobal || ''
+  if (prazo === '5 anos') return false
+  return true
+})
+
+// ── Tooltip state ─────────────────────────────────────────────────────────────
+const tooltipVisible = ref(false)
+const tooltipText = ref('')
+const tooltipX = ref(0)
+const tooltipY = ref(0)
+const TOOLTIPS: Record<string, string> = {
+  morte: 'Cobertura obrigatória: garante indenização aos beneficiários em caso de morte natural ou acidental. Inclui adiantamento integral em vida caso o segurado seja diagnosticado com doença em estágio terminal.',
+  morteTemp: 'Cobertura de morte com vigência temporária: garante indenização aos beneficiários em caso de morte natural ou acidental durante o período de vigência contratado.',
+  iea: 'Cobertura adicional à morte básica: garante indenização extra aos beneficiários quando o falecimento do segurado ocorrer exclusivamente por acidente.',
+  ipa: 'Garante indenização ao próprio segurado em caso de perda permanente — total ou parcial — de membros ou funções do corpo causada por acidente.',
+  ied: 'Garante indenização ao segurado que, em decorrência de doença, perde de forma total e permanente a capacidade de exercer qualquer atividade que lhe garanta subsistência.',
+  dg: 'Proporciona indenização em vida ao segurado diagnosticado com doenças graves como câncer, infarto, AVC, Alzheimer, Parkinson, ELA, insuficiência renal crônica, entre outras.',
+  dih: 'Garante ao segurado uma indenização por dia de internação hospitalar, a partir do primeiro dia, seja por doença ou acidente.',
+  dit: 'Garante indenização diária caso o segurado fique impossibilitado de exercer suas atividades profissionais por mais de 15 dias consecutivos, em decorrência de doença ou acidente.',
+  saf: 'Oferece suporte completo à família do segurado em caso de falecimento, cobrindo despesas com o serviço funerário (urna, traslado, velório e sepultamento).',
+}
+function showTooltip(event: MouseEvent, key: string) {
+  const el = event.currentTarget as HTMLElement
+  const rect = el.getBoundingClientRect()
+  tooltipText.value = TOOLTIPS[key] || ''
+  tooltipX.value = rect.left + rect.width / 2
+  tooltipY.value = rect.top - 8
+  tooltipVisible.value = true
+}
+function hideTooltip() { tooltipVisible.value = false }
+
 // ── Cálculo de totais ─────────────────────────────────────────────────────────
 const totalMensal = computed(() => {
   let total = 0
@@ -218,13 +255,19 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
 
   <!-- ── 1. Morte Natural ou Acidental + Adiantamento por Doença Terminal (Obrigatório) ── -->
   <div :style="cardStyle">
-    <div :style="{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }">
+    <div :style="{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }">
       <div :style="{ width: '14px', height: '14px', borderRadius: '3px', background: 'oklch(20% 0.05 250)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }">
         <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
       </div>
-      <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Morte Natural ou Acidental + Adiantamento por Doença Terminal <span :style="{ fontSize: '11px', color: 'oklch(50% 0.15 30)', fontWeight: 600 }">(Obrigatório)</span></p>
+      <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">
+        <span v-if="isTemporaria">Morte Básica</span>
+        <span v-else>Morte Natural ou Acidental + Adiantamento por Doença Terminal <span :style="{ fontSize: '11px', color: 'oklch(50% 0.15 30)', fontWeight: 600 }">(Obrigatório)</span></span>
+      </p>
+      <!-- Tooltip icon -->
+      <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'morte')" @mouseleave="hideTooltip">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
+      </div>
     </div>
-    <p :style="{ fontSize: '11px', color: 'oklch(55% 0.02 250)', marginBottom: '12px', marginLeft: '22px' }">Código: MQC_Adc | Capital Livre | Mín: R$ 50.000 | Máx: R$ 20.000.000</p>
     <div :style="grid4">
       <div>
         <span :style="labelStyle">Vigência</span>
@@ -238,9 +281,10 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         <span :style="labelStyle">Capital Segurado *</span>
         <input v-if="isEditing" type="text" :value="modelValue.morte.capitalSegurado" @input="(e) => onCapitalChange('morte', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
         <p v-else :style="readonlyVal">{{ modelValue.morte.capitalSegurado || '—' }}</p>
+        <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 20.000.000</p>
       </div>
       <div>
-        <span :style="labelStyle">{{ modelValue.tipoContribuicao === 'anual' ? 'Contribuição Anual' : 'Contribuição Mensal' }}</span>
+        <span :style="labelStyle">Contribuição</span>
         <input v-if="isEditing" type="text" :value="modelValue.tipoContribuicao === 'anual' ? modelValue.morte.contribuicaoAnual : modelValue.morte.contribuicaoMensal" readonly :style="inputReadonly" placeholder="Calculado automaticamente" />
         <p v-else :style="readonlyVal">{{ (modelValue.tipoContribuicao === 'anual' ? modelValue.morte.contribuicaoAnual : modelValue.morte.contribuicaoMensal) || '—' }}</p>
       </div>
@@ -248,15 +292,17 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
   </div>
 
   <!-- ── 2. Morte Natural ou Acidental (Vigência Temporária) ── -->
-  <div :style="cardStyle">
-    <div :style="{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }">
+  <div v-if="mostrarMorteTemp" :style="cardStyle">
+    <div :style="{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }">
       <input v-if="isEditing" type="checkbox" :checked="modelValue.morteTemp.ativo" @change="() => toggleCobertura('morteTemp')" :style="{ width: '14px', height: '14px', cursor: 'pointer', flexShrink: 0 }" />
       <div v-else :style="{ width: '14px', height: '14px', borderRadius: '3px', background: modelValue.morteTemp.ativo ? 'oklch(20% 0.05 250)' : 'oklch(88% 0.005 260)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }">
         <svg v-if="modelValue.morteTemp.ativo" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Morte Natural ou Acidental (Vigência Temporária)</p>
+      <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'morteTemp')" @mouseleave="hideTooltip">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
+      </div>
     </div>
-    <p :style="{ fontSize: '11px', color: 'oklch(55% 0.02 250)', marginBottom: '12px', marginLeft: '22px' }">Código: MQC_Basica | Capital Livre | Mín: R$ 50.000 | Máx: R$ 20.000.000</p>
     <template v-if="modelValue.morteTemp.ativo">
       <div :style="grid4">
         <div>
@@ -277,9 +323,10 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <span :style="labelStyle">Capital Segurado *</span>
           <input v-if="isEditing" type="text" :value="modelValue.morteTemp.capitalSegurado" @input="(e) => onCapitalChange('morteTemp', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.morteTemp.capitalSegurado || '—' }}</p>
+          <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 20.000.000</p>
         </div>
         <div>
-          <span :style="labelStyle">{{ modelValue.tipoContribuicao === 'anual' ? 'Contribuição Anual' : 'Contribuição Mensal' }}</span>
+          <span :style="labelStyle">Contribuição</span>
           <input v-if="isEditing" type="text" :value="modelValue.tipoContribuicao === 'anual' ? modelValue.morteTemp.contribuicaoAnual : modelValue.morteTemp.contribuicaoMensal" readonly :style="inputReadonly" placeholder="Calculado automaticamente" />
           <p v-else :style="readonlyVal">{{ (modelValue.tipoContribuicao === 'anual' ? modelValue.morteTemp.contribuicaoAnual : modelValue.morteTemp.contribuicaoMensal) || '—' }}</p>
         </div>
@@ -295,8 +342,10 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         <svg v-if="modelValue.iea.ativo" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Indenização Especial de Morte por Acidente (IEA)</p>
+      <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'iea')" @mouseleave="hideTooltip">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
+      </div>
     </div>
-    <p :style="{ fontSize: '11px', color: 'oklch(55% 0.02 250)', marginBottom: '12px', marginLeft: '22px' }">Código: IEA | Capital Livre | Mín: R$ 50.000 | Máx: Capital de Morte</p>
     <template v-if="modelValue.iea.ativo">
       <div :style="grid4">
         <div>
@@ -311,10 +360,11 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <span :style="labelStyle">Capital Segurado *</span>
           <input v-if="isEditing" type="text" :value="modelValue.iea.capitalSegurado" @input="(e) => onCapitalChange('iea', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.iea.capitalSegurado || '—' }}</p>
-          <p v-if="isEditing && capitalMorteNum > 0" :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Máx: {{ formatBRL(capitalMorteNum) }}</p>
+          <p v-if="isEditing && capitalMorteNum > 0" :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: {{ formatBRL(capitalMorteNum) }}</p>
+          <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: Capital de Morte</p>
         </div>
         <div>
-          <span :style="labelStyle">{{ modelValue.tipoContribuicao === 'anual' ? 'Contribuição Anual' : 'Contribuição Mensal' }}</span>
+          <span :style="labelStyle">Contribuição</span>
           <input v-if="isEditing" type="text" :value="modelValue.tipoContribuicao === 'anual' ? modelValue.iea.contribuicaoAnual : modelValue.iea.contribuicaoMensal" readonly :style="inputReadonly" placeholder="Calculado automaticamente" />
           <p v-else :style="readonlyVal">{{ (modelValue.tipoContribuicao === 'anual' ? modelValue.iea.contribuicaoAnual : modelValue.iea.contribuicaoMensal) || '—' }}</p>
         </div>
@@ -330,8 +380,10 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         <svg v-if="modelValue.ipa.ativo" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Invalidez Permanente Parcial ou Total por Acidente (IPA)</p>
+      <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'ipa')" @mouseleave="hideTooltip">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
+      </div>
     </div>
-    <p :style="{ fontSize: '11px', color: 'oklch(55% 0.02 250)', marginBottom: '12px', marginLeft: '22px' }">Código: IPA / IPA2 / IPAM / IPAM2 | Capital Livre | Mín: R$ 50.000 | Máx: Capital de Morte</p>
     <template v-if="modelValue.ipa.ativo">
       <div :style="grid4">
         <div>
@@ -347,10 +399,10 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <input v-if="isEditing" type="text" :value="modelValue.ipa.capitalSegurado" @input="(e) => onCapitalChange('ipa', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.ipa.capitalSegurado || '—' }}</p>
           <p v-if="erroIPA" :style="erroStyle">⚠ {{ erroIPA }}</p>
-          <p v-else-if="isEditing && capitalMorteNum > 0" :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Máx: {{ formatBRL(maxCapitalIPA) }}</p>
+          <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000{{ capitalMorteNum > 0 ? ' | Máx: ' + formatBRL(maxCapitalIPA) : '' }}</p>
         </div>
         <div>
-          <span :style="labelStyle">{{ modelValue.tipoContribuicao === 'anual' ? 'Contribuição Anual' : 'Contribuição Mensal' }}</span>
+          <span :style="labelStyle">Contribuição</span>
           <input v-if="isEditing" type="text" :value="modelValue.tipoContribuicao === 'anual' ? modelValue.ipa.contribuicaoAnual : modelValue.ipa.contribuicaoMensal" readonly :style="inputReadonly" placeholder="Calculado automaticamente" />
           <p v-else :style="readonlyVal">{{ (modelValue.tipoContribuicao === 'anual' ? modelValue.ipa.contribuicaoAnual : modelValue.ipa.contribuicaoMensal) || '—' }}</p>
         </div>
@@ -392,8 +444,10 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         <svg v-if="modelValue.ied.ativo" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Indenização Especial de Invalidez por Doença (IED)</p>
+      <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'ied')" @mouseleave="hideTooltip">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
+      </div>
     </div>
-    <p :style="{ fontSize: '11px', color: 'oklch(55% 0.02 250)', marginBottom: '12px', marginLeft: '22px' }">Código: IED | Capital Livre | Mín: R$ 50.000 | Máx: R$ 5.000.000</p>
     <template v-if="modelValue.ied.ativo">
       <div :style="grid4">
         <div>
@@ -408,9 +462,10 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <span :style="labelStyle">Capital Segurado *</span>
           <input v-if="isEditing" type="text" :value="modelValue.ied.capitalSegurado" @input="(e) => onCapitalChange('ied', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.ied.capitalSegurado || '—' }}</p>
+          <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 5.000.000</p>
         </div>
         <div>
-          <span :style="labelStyle">{{ modelValue.tipoContribuicao === 'anual' ? 'Contribuição Anual' : 'Contribuição Mensal' }}</span>
+          <span :style="labelStyle">Contribuição</span>
           <input v-if="isEditing" type="text" :value="modelValue.tipoContribuicao === 'anual' ? modelValue.ied.contribuicaoAnual : modelValue.ied.contribuicaoMensal" readonly :style="inputReadonly" placeholder="Calculado automaticamente" />
           <p v-else :style="readonlyVal">{{ (modelValue.tipoContribuicao === 'anual' ? modelValue.ied.contribuicaoAnual : modelValue.ied.contribuicaoMensal) || '—' }}</p>
         </div>
@@ -427,8 +482,10 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Diagnóstico de Doenças Graves (DG)</p>
       <span v-if="!elegivelDG" :style="badgeIndisponivel">Indisponível acima de 65 anos</span>
+      <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'dg')" @mouseleave="hideTooltip">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
+      </div>
     </div>
-    <p :style="{ fontSize: '11px', color: 'oklch(55% 0.02 250)', marginBottom: '12px', marginLeft: '22px' }">Código: DG_24 | Capital Livre | Mín: R$ 50.000 | Máx: 10% do Capital de Morte | Vigência: até 5 anos</p>
     <template v-if="modelValue.dg.ativo && elegivelDG">
       <div :style="grid4">
         <div>
@@ -450,10 +507,10 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <input v-if="isEditing" type="text" :value="modelValue.dg.capitalSegurado" @input="(e) => onCapitalChange('dg', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.dg.capitalSegurado || '—' }}</p>
           <p v-if="erroDG" :style="erroStyle">⚠ {{ erroDG }}</p>
-          <p v-else-if="isEditing && maxCapitalDG > 0" :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Máx: {{ formatBRL(maxCapitalDG) }}</p>
+          <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000{{ maxCapitalDG > 0 ? ' | Máx: ' + formatBRL(maxCapitalDG) : '' }}</p>
         </div>
         <div>
-          <span :style="labelStyle">{{ modelValue.tipoContribuicao === 'anual' ? 'Contribuição Anual' : 'Contribuição Mensal' }}</span>
+          <span :style="labelStyle">Contribuição</span>
           <input v-if="isEditing" type="text" :value="modelValue.tipoContribuicao === 'anual' ? modelValue.dg.contribuicaoAnual : modelValue.dg.contribuicaoMensal" readonly :style="inputReadonly" placeholder="Calculado automaticamente" />
           <p v-else :style="readonlyVal">{{ (modelValue.tipoContribuicao === 'anual' ? modelValue.dg.contribuicaoAnual : modelValue.dg.contribuicaoMensal) || '—' }}</p>
         </div>
@@ -470,8 +527,10 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Diária de Internação Hospitalar (DIH)</p>
       <span v-if="!elegivelDIH" :style="badgeIndisponivel">Indisponível acima de 65 anos</span>
+      <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'dih')" @mouseleave="hideTooltip">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
+      </div>
     </div>
-    <p :style="{ fontSize: '11px', color: 'oklch(55% 0.02 250)', marginBottom: '12px', marginLeft: '22px' }">Código: DIH / DIHUTI | Capital Livre | Mín: R$ 100 | Máx: R$ 1.000 ou Capital Morte ÷ 250 | Vigência: 5 anos</p>
     <template v-if="modelValue.dih.ativo && elegivelDIH">
       <div :style="grid4">
         <div>
@@ -486,10 +545,10 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <span :style="labelStyle">Capital Segurado (diária) *</span>
           <input v-if="isEditing" type="text" :value="modelValue.dih.capitalSegurado" @input="(e) => onCapitalChange('dih', (e.target as HTMLInputElement).value)" :placeholder="`R$ 100,00 – ${formatBRL(maxDIH)}`" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.dih.capitalSegurado || '—' }}</p>
-          <p v-if="isEditing && maxDIH > 0" :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Máx: {{ formatBRL(maxDIH) }}</p>
+          <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 100{{ maxDIH > 0 ? ' | Máx: ' + formatBRL(maxDIH) : '' }}</p>
         </div>
         <div>
-          <span :style="labelStyle">{{ modelValue.tipoContribuicao === 'anual' ? 'Contribuição Anual' : 'Contribuição Mensal' }}</span>
+          <span :style="labelStyle">Contribuição</span>
           <input v-if="isEditing" type="text" :value="modelValue.tipoContribuicao === 'anual' ? modelValue.dih.contribuicaoAnual : modelValue.dih.contribuicaoMensal" readonly :style="inputReadonly" placeholder="Calculado automaticamente" />
           <p v-else :style="readonlyVal">{{ (modelValue.tipoContribuicao === 'anual' ? modelValue.dih.contribuicaoAnual : modelValue.dih.contribuicaoMensal) || '—' }}</p>
         </div>
@@ -518,8 +577,10 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Diária de Incapacidade Temporária (DIT)</p>
       <span v-if="!elegivelDIT" :style="badgeIndisponivel">Indisponível acima de 65 anos</span>
+      <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'dit')" @mouseleave="hideTooltip">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
+      </div>
     </div>
-    <p :style="{ fontSize: '11px', color: 'oklch(55% 0.02 250)', marginBottom: '12px', marginLeft: '22px' }">Código: DIT0_7M1/M2 ou DIT0_15M1/M2 | Capital Livre | Mín: R$ 1.000 | Máx: R$ 30.000 ou 10% Capital Morte | Vigência: 5 anos</p>
     <template v-if="modelValue.dit.ativo && elegivelDIT">
       <div :style="grid4">
         <div>
@@ -534,10 +595,10 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <span :style="labelStyle">Capital Segurado (diária) *</span>
           <input v-if="isEditing" type="text" :value="modelValue.dit.capitalSegurado" @input="(e) => onCapitalChange('dit', (e.target as HTMLInputElement).value)" :placeholder="`R$ 1.000,00 – ${formatBRL(maxDIT)}`" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.dit.capitalSegurado || '—' }}</p>
-          <p v-if="isEditing && maxDIT > 0" :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Máx: {{ formatBRL(maxDIT) }}</p>
+          <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 1.000{{ maxDIT > 0 ? ' | Máx: ' + formatBRL(maxDIT) : '' }}</p>
         </div>
         <div>
-          <span :style="labelStyle">{{ modelValue.tipoContribuicao === 'anual' ? 'Contribuição Anual' : 'Contribuição Mensal' }}</span>
+          <span :style="labelStyle">Contribuição</span>
           <input v-if="isEditing" type="text" :value="modelValue.tipoContribuicao === 'anual' ? modelValue.dit.contribuicaoAnual : modelValue.dit.contribuicaoMensal" readonly :style="inputReadonly" placeholder="Calculado automaticamente" />
           <p v-else :style="readonlyVal">{{ (modelValue.tipoContribuicao === 'anual' ? modelValue.dit.contribuicaoAnual : modelValue.dit.contribuicaoMensal) || '—' }}</p>
         </div>
@@ -591,8 +652,10 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         <svg v-if="modelValue.saf.ativo" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Serviço de Assistência Funeral (SAF)</p>
+      <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'saf')" @mouseleave="hideTooltip">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
+      </div>
     </div>
-    <p :style="{ fontSize: '11px', color: 'oklch(55% 0.02 250)', marginBottom: '12px', marginLeft: '22px' }">Código: SAF_Ind / SAF_Fam | Uniforme | Capital fixo: R$ 12.000</p>
     <template v-if="modelValue.saf.ativo">
       <div :style="grid4">
         <div>
@@ -611,7 +674,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <p :style="readonlyVal">R$ 12.000,00</p>
         </div>
         <div>
-          <span :style="labelStyle">{{ modelValue.tipoContribuicao === 'anual' ? 'Contribuição Anual' : 'Contribuição Mensal' }}</span>
+          <span :style="labelStyle">Contribuição</span>
           <input v-if="isEditing" type="text" :value="modelValue.tipoContribuicao === 'anual' ? modelValue.saf.contribuicaoAnual : modelValue.saf.contribuicaoMensal" readonly :style="inputReadonly" placeholder="Calculado automaticamente" />
           <p v-else :style="readonlyVal">{{ (modelValue.tipoContribuicao === 'anual' ? modelValue.saf.contribuicaoAnual : modelValue.saf.contribuicaoMensal) || '—' }}</p>
         </div>
@@ -630,6 +693,14 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
       </div>
     </template>
   </div>
+
+  <!-- ── Tooltip Overlay ── -->
+  <teleport to="body">
+    <div v-if="tooltipVisible" :style="{ position: 'fixed', left: tooltipX + 'px', top: tooltipY + 'px', transform: 'translateX(-50%) translateY(-100%)', background: 'oklch(15% 0.05 250)', color: '#fff', fontSize: '12px', lineHeight: '1.5', padding: '10px 14px', borderRadius: '8px', maxWidth: '320px', zIndex: 9999, pointerEvents: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.25)' }">
+      {{ tooltipText }}
+      <div :style="{ position: 'absolute', bottom: '-6px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid oklch(15% 0.05 250)' }"></div>
+    </div>
+  </teleport>
 
   <!-- ── Resumo de Contribuição ── -->
   <div :style="{ border: '1px solid oklch(85% 0.01 250)', borderRadius: '8px', padding: '16px', marginTop: '8px', background: 'oklch(97% 0.003 260)' }">
