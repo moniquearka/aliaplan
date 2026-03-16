@@ -108,6 +108,24 @@ function redistributePercentuais(fundos: FundoSelecionado[], contribuicaoMensal:
   })
 }
 
+// ── Computed: idade e gênero do proponente ────────────────────────────────────
+const idadeProponente = computed(() => {
+  const dn = store.resumoData?.proponente?.dataNascimento
+  if (!dn) return 0
+  const parts = dn.split('/')
+  if (parts.length !== 3) return 0
+  const birth = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]))
+  const today = new Date()
+  let age = today.getFullYear() - birth.getFullYear()
+  const m = today.getMonth() - birth.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
+  return age
+})
+const generoProponente = computed<'Feminino' | 'Masculino'>(() => {
+  const g = store.resumoData?.proponente?.genero || 'Feminino'
+  return g === 'Masculino' ? 'Masculino' : 'Feminino'
+})
+
 // ── Editing ──────────────────────────────────────────────────────────────────
 function handleEdit() {
   draft.value = JSON.parse(JSON.stringify(store.detalhamentoData))
@@ -211,6 +229,31 @@ function handleSave() {
         const soma = sub.fundos.reduce((acc: number, f: FundoSelecionado) => acc + (parseFloat(f.percentual) || 0), 0)
         if (Math.abs(soma - 100) >= 0.01) {
           alert(`A soma dos percentuais dos fundos é ${soma.toFixed(0)}%. Ajuste para totalizar 100% antes de salvar.`)
+          return
+        }
+      }
+    }
+  }
+  // Validar Capital Segurado das coberturas de Seguro de Vida
+  for (const plano of draft.value.planos) {
+    if (plano.tipo !== 'seguro' || !plano.seguroVida) continue
+    const sv = plano.seguroVida
+    const capitalMorte = parseBRL(sv.morte?.capitalSegurado || '')
+    if (capitalMorte > 0) {
+      // IPA ≤ Capital de Morte
+      if (sv.ipa?.ativo) {
+        const csIPA = parseBRL(sv.ipa.capitalSegurado || '')
+        if (csIPA > capitalMorte) {
+          alert(`O Capital Segurado da cobertura IPA (${formatBRL(csIPA)}) não pode exceder o Capital de Morte (${formatBRL(capitalMorte)}). Corrija antes de salvar.`)
+          return
+        }
+      }
+      // DG ≤ 10% do Capital de Morte
+      if (sv.dg?.ativo) {
+        const csDG = parseBRL(sv.dg.capitalSegurado || '')
+        const maxDG = capitalMorte * 0.10
+        if (csDG > maxDG) {
+          alert(`O Capital Segurado da cobertura DG (${formatBRL(csDG)}) não pode exceder 10% do Capital de Morte (${formatBRL(maxDG)}). Corrija antes de salvar.`)
           return
         }
       }
@@ -855,7 +898,9 @@ const continuerDisabled = computed(() => isEditing.value)
           v-if="plano.seguroVida"
           :model-value="(isEditing ? draft.planos.find((x: Plano) => x.id === plano.id) : plano)?.seguroVida || plano.seguroVida"
           :is-editing="isEditing"
-          :capital-morte-base="0"
+          :capital-morte-base="parseBRL((isEditing ? draft.planos.find((x: Plano) => x.id === plano.id) : plano)?.seguroVida?.morte?.capitalSegurado || '')"
+          :idade-proponente="idadeProponente"
+          :genero-proponente="generoProponente"
           @update:model-value="(val: SeguroVidaData) => { const p = draft.planos.find((x: Plano) => x.id === plano.id); if (p) p.seguroVida = val }"
         />
 
