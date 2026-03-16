@@ -904,8 +904,8 @@ const continuerDisabled = computed(() => isEditing.value)
           @update:model-value="(val: SeguroVidaData) => { const p = draft.planos.find((x: Plano) => x.id === plano.id); if (p) p.seguroVida = val }"
         />
 
-        <!-- Tabela de coberturas -->
-        <div :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', overflow: 'hidden', marginBottom: '12px' }">
+        <!-- Tabela de coberturas REMOVIDA -->
+        <div v-if="false" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', overflow: 'hidden', marginBottom: '12px' }">
           <table :style="{ width: '100%', fontSize: '13px', borderCollapse: 'collapse', tableLayout: 'fixed' }">
             <colgroup>
               <col style="width: auto" />
@@ -986,37 +986,7 @@ const continuerDisabled = computed(() => isEditing.value)
           </table>
         </div>
 
-        <!-- Adicionar cobertura -->
-        <button v-if="isEditing" @click="addCobertura(plano)" :style="{ width: '100%', border: '1px dashed rgba(30,64,175,0.4)', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', color: 'oklch(20% 0.05 250)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 500, marginBottom: '8px' }">
-          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Adicionar Cobertura
-        </button>
-
-        <!-- Assistências & Benefícios -->
-        <div :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', padding: '16px 20px', marginTop: '12px', marginBottom: '8px', background: 'oklch(98.5% 0.002 260)' }">
-          <p :style="{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'oklch(40% 0.05 250)', marginBottom: '12px', marginTop: 0 }">Assistências &amp; Benefícios</p>
-          <div :style="{ display: 'flex', flexDirection: 'column', gap: '8px' }">
-            <template v-for="(item, idx) in [
-              { key: 'funeralFamiliar', label: 'Assistência Funeral Familiar' },
-              { key: 'seguroViagem', label: 'Seguro Viagem' },
-              { key: 'assistenciaDomiciliar', label: 'Assistência Domiciliar' },
-              { key: 'telemedicina', label: 'Telemedicina' },
-              { key: 'descontoFarmacia', label: 'Desconto em Farmácia' },
-            ]" :key="item.key">
-              <label :style="{ display: 'flex', alignItems: 'center', gap: '10px', cursor: isEditing ? 'pointer' : 'default', userSelect: 'none' }">
-                <span :style="{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '4px', border: `1.5px solid ${(plano.assistencias || {})[item.key as keyof Assistencias] ? '#1e40af' : 'oklch(75% 0.01 260)'}`, background: (plano.assistencias || {})[item.key as keyof Assistencias] ? '#1e40af' : '#fff', flexShrink: 0, transition: 'all 0.15s' }"
-                  @click="() => { if (!isEditing) return; const p = draft.planos.find((x: Plano) => x.id === plano.id); if (p) { if (!p.assistencias) p.assistencias = { funeralFamiliar: false, seguroViagem: false, assistenciaDomiciliar: false, telemedicina: false, descontoFarmacia: false }; (p.assistencias as any)[item.key] = !(p.assistencias as any)[item.key] } }">
-                  <svg v-if="(plano.assistencias || {})[item.key as keyof Assistencias]" width="11" height="11" viewBox="0 0 12 12" fill="none">
-                    <path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                </span>
-                <span :style="{ fontSize: '13px', color: (plano.assistencias || {})[item.key as keyof Assistencias] ? 'oklch(20% 0.05 250)' : 'oklch(45% 0.02 250)', fontWeight: (plano.assistencias || {})[item.key as keyof Assistencias] ? 500 : 400 }">{{ item.label }}</span>
-              </label>
-            </template>
-          </div>
-        </div>
+        <!-- Adicionar cobertura e Assistências & Benefícios REMOVIDOS -->
       </template>
     </div>
 

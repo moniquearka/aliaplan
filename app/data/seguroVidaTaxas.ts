@@ -197,18 +197,15 @@ export function calcContribuicaoMensal(
       return (capitalSegurado / 1000) * taxa
     }
     case 'dg': {
-      if (idade > 65) return 0
       taxa = getTaxa(TAXAS_DG, idade, genero)
       return (capitalSegurado / 1000) * taxa
     }
     case 'dih': {
-      if (idade > 65) return 0
       taxa = getTaxa(TAXAS_DIH, idade, genero)
       const fatorUTI = opts.dihUTI ? FATOR_DIH_UTI : 1
       return capitalSegurado * taxa * fatorUTI
     }
     case 'dit': {
-      if (idade > 65) return 0
       const tabDIT = (opts.franquiaReduzida && opts.quantidadeDias === '7 dias')
         ? TAXAS_DIT_7DIAS
         : TAXAS_DIT_15DIAS
@@ -238,6 +235,5 @@ export function isElegivelPorIdade(
   idade: number
 ): boolean {
   if (idade < 18 || idade > 75) return false
-  if (['dg', 'dih', 'dit'].includes(cobertura) && idade > 65) return false
   return true
 }

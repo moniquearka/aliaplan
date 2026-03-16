@@ -152,6 +152,22 @@ const elegivelDG = computed(() => isElegivelPorIdade('dg', props.idadeProponente
 const elegivelDIH = computed(() => isElegivelPorIdade('dih', props.idadeProponente))
 const elegivelDIT = computed(() => isElegivelPorIdade('dit', props.idadeProponente))
 
+// ── Sincronizar Vigência → Prazo de Pagamento automaticamente ─────────────────
+function onVigenciaChange(novaVigencia: string) {
+  let novoPrazo = props.modelValue.prazoPagamentoGlobal
+  const matchTemp = novaVigencia.match(/Temporária (\d+) anos/i)
+  if (matchTemp) {
+    novoPrazo = `${matchTemp[1]} anos`
+  }
+  emit('update:modelValue', { ...props.modelValue, vigenciaGlobal: novaVigencia, prazoPagamentoGlobal: novoPrazo })
+}
+
+function onMorteTempVigenciaChange(novaVigencia: string) {
+  const matchTemp = novaVigencia.match(/(\d+) anos/i)
+  const novoPrazo = matchTemp ? `${matchTemp[1]} anos` : props.modelValue.morteTemp.prazoPagamento
+  emit('update:modelValue', { ...props.modelValue, morteTemp: { ...props.modelValue.morteTemp, vigencia: novaVigencia, prazoPagamento: novoPrazo } })
+}
+
 // ── Visibilidade condicional dos blocos de Morte ──────────────────────────────
 // Quando Vigência contém 'Temporária': bloco 1 vira 'Morte Básica', bloco 2 some
 // Quando Vigência = 'Vitalícia' e Prazo = '5 anos': bloco 2 some
@@ -215,9 +231,9 @@ const totalAnual = computed(() => {
 const cardStyle = { border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', padding: '16px', marginBottom: '12px', background: '#fff' }
 const cardDisabled = { border: '1px solid oklch(93% 0.003 260)', borderRadius: '8px', padding: '16px', marginBottom: '12px', background: 'oklch(97% 0.002 260)', opacity: '0.6' }
 const labelStyle = { fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', marginBottom: '4px', display: 'block' }
-const inputStyle = { border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '6px 10px', fontSize: '13px', background: '#fff', color: 'oklch(20% 0.05 250)', outline: 'none', width: '100%' }
-const inputReadonly = { border: '1px solid oklch(93% 0.003 260)', borderRadius: '4px', padding: '6px 10px', fontSize: '13px', background: 'oklch(97% 0.002 260)', color: 'oklch(35% 0.03 250)', outline: 'none', width: '100%' }
-const selectStyle = { border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '6px 10px', fontSize: '13px', background: '#fff', color: 'oklch(20% 0.05 250)', outline: 'none', width: '100%', cursor: 'pointer' }
+const inputStyle = { border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '6px 8px', fontSize: '13px', background: '#fff', color: 'oklch(20% 0.05 250)', outline: 'none', width: '88%' }
+const inputReadonly = { border: '1px solid oklch(93% 0.003 260)', borderRadius: '4px', padding: '6px 8px', fontSize: '13px', background: 'oklch(97% 0.002 260)', color: 'oklch(35% 0.03 250)', outline: 'none', width: '88%' }
+const selectStyle = { border: '1px solid oklch(90% 0.005 260)', borderRadius: '4px', padding: '6px 8px', fontSize: '13px', background: '#fff', color: 'oklch(20% 0.05 250)', outline: 'none', width: '88%', cursor: 'pointer' }
 const readonlyVal = { fontSize: '13px', color: 'oklch(25% 0.05 250)', fontWeight: 500 }
 const grid4 = { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginTop: '12px' }
 const grid3 = { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: '12px' }
@@ -234,7 +250,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
     <div :style="grid3">
       <div>
         <span :style="labelStyle">Vigência *</span>
-        <select v-if="isEditing" :value="modelValue.vigenciaGlobal" @change="(e) => updateField('vigenciaGlobal', (e.target as HTMLSelectElement).value)" :style="selectStyle">
+        <select v-if="isEditing" :value="modelValue.vigenciaGlobal" @change="(e) => onVigenciaChange((e.target as HTMLSelectElement).value)" :style="selectStyle">
           <option v-for="v in VIGENCIA_VITALICIA_TEMP" :key="v" :value="v">{{ v }}</option>
         </select>
         <p v-else :style="readonlyVal">{{ modelValue.vigenciaGlobal || '—' }}</p>
@@ -307,7 +323,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
       <div :style="grid4">
         <div>
           <span :style="labelStyle">Vigência</span>
-          <select v-if="isEditing" :value="modelValue.morteTemp.vigencia" @change="(e) => updateCobertura('morteTemp', 'vigencia', (e.target as HTMLSelectElement).value)" :style="selectStyle">
+          <select v-if="isEditing" :value="modelValue.morteTemp.vigencia" @change="(e) => onMorteTempVigenciaChange((e.target as HTMLSelectElement).value)" :style="selectStyle">
             <option v-for="v in VIGENCIA_TEMP_ONLY" :key="v" :value="v">{{ v }}</option>
           </select>
           <p v-else :style="readonlyVal">{{ modelValue.morteTemp.vigencia || '—' }}</p>
@@ -360,8 +376,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <span :style="labelStyle">Capital Segurado *</span>
           <input v-if="isEditing" type="text" :value="modelValue.iea.capitalSegurado" @input="(e) => onCapitalChange('iea', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.iea.capitalSegurado || '—' }}</p>
-          <p v-if="isEditing && capitalMorteNum > 0" :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: {{ formatBRL(capitalMorteNum) }}</p>
-          <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: Capital de Morte</p>
+          <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 10.000.000</p>
         </div>
         <div>
           <span :style="labelStyle">Contribuição</span>
@@ -399,7 +414,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <input v-if="isEditing" type="text" :value="modelValue.ipa.capitalSegurado" @input="(e) => onCapitalChange('ipa', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.ipa.capitalSegurado || '—' }}</p>
           <p v-if="erroIPA" :style="erroStyle">⚠ {{ erroIPA }}</p>
-          <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000{{ capitalMorteNum > 0 ? ' | Máx: ' + formatBRL(maxCapitalIPA) : '' }}</p>
+          <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 10.000.000</p>
         </div>
         <div>
           <span :style="labelStyle">Contribuição</span>
@@ -462,7 +477,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <span :style="labelStyle">Capital Segurado *</span>
           <input v-if="isEditing" type="text" :value="modelValue.ied.capitalSegurado" @input="(e) => onCapitalChange('ied', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.ied.capitalSegurado || '—' }}</p>
-          <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 5.000.000</p>
+          <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 1.000.000</p>
         </div>
         <div>
           <span :style="labelStyle">Contribuição</span>
@@ -474,19 +489,19 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
   </div>
 
   <!-- ── 6. Diagnóstico de Doenças Graves (DG) ── -->
-  <div :style="elegivelDG ? cardStyle : cardDisabled">
+  <div :style="cardStyle">
     <div :style="{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }">
-      <input v-if="isEditing && elegivelDG" type="checkbox" :checked="modelValue.dg.ativo" @change="() => toggleCobertura('dg')" :style="{ width: '14px', height: '14px', cursor: 'pointer', flexShrink: 0 }" />
+      <input v-if="isEditing" type="checkbox" :checked="modelValue.dg.ativo" @change="() => toggleCobertura('dg')" :style="{ width: '14px', height: '14px', cursor: 'pointer', flexShrink: 0 }" />
       <div v-else :style="{ width: '14px', height: '14px', borderRadius: '3px', background: modelValue.dg.ativo ? 'oklch(20% 0.05 250)' : 'oklch(88% 0.005 260)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }">
         <svg v-if="modelValue.dg.ativo" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Diagnóstico de Doenças Graves (DG)</p>
-      <span v-if="!elegivelDG" :style="badgeIndisponivel">Indisponível acima de 65 anos</span>
+
       <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'dg')" @mouseleave="hideTooltip">
         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
       </div>
     </div>
-    <template v-if="modelValue.dg.ativo && elegivelDG">
+    <template v-if="modelValue.dg.ativo">
       <div :style="grid4">
         <div>
           <span :style="labelStyle">Vigência</span>
@@ -507,7 +522,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <input v-if="isEditing" type="text" :value="modelValue.dg.capitalSegurado" @input="(e) => onCapitalChange('dg', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.dg.capitalSegurado || '—' }}</p>
           <p v-if="erroDG" :style="erroStyle">⚠ {{ erroDG }}</p>
-          <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000{{ maxCapitalDG > 0 ? ' | Máx: ' + formatBRL(maxCapitalDG) : '' }}</p>
+          <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 1.000.000</p>
         </div>
         <div>
           <span :style="labelStyle">Contribuição</span>
@@ -519,19 +534,19 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
   </div>
 
   <!-- ── 7. Diária de Internação Hospitalar (DIH) ── -->
-  <div :style="elegivelDIH ? cardStyle : cardDisabled">
+  <div :style="cardStyle">
     <div :style="{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }">
-      <input v-if="isEditing && elegivelDIH" type="checkbox" :checked="modelValue.dih.ativo" @change="() => toggleCobertura('dih')" :style="{ width: '14px', height: '14px', cursor: 'pointer', flexShrink: 0 }" />
+      <input v-if="isEditing" type="checkbox" :checked="modelValue.dih.ativo" @change="() => toggleCobertura('dih')" :style="{ width: '14px', height: '14px', cursor: 'pointer', flexShrink: 0 }" />
       <div v-else :style="{ width: '14px', height: '14px', borderRadius: '3px', background: modelValue.dih.ativo ? 'oklch(20% 0.05 250)' : 'oklch(88% 0.005 260)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }">
         <svg v-if="modelValue.dih.ativo" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Diária de Internação Hospitalar (DIH)</p>
-      <span v-if="!elegivelDIH" :style="badgeIndisponivel">Indisponível acima de 65 anos</span>
+
       <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'dih')" @mouseleave="hideTooltip">
         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
       </div>
     </div>
-    <template v-if="modelValue.dih.ativo && elegivelDIH">
+    <template v-if="modelValue.dih.ativo">
       <div :style="grid4">
         <div>
           <span :style="labelStyle">Vigência</span>
@@ -545,7 +560,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <span :style="labelStyle">Capital Segurado (diária) *</span>
           <input v-if="isEditing" type="text" :value="modelValue.dih.capitalSegurado" @input="(e) => onCapitalChange('dih', (e.target as HTMLInputElement).value)" :placeholder="`R$ 100,00 – ${formatBRL(maxDIH)}`" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.dih.capitalSegurado || '—' }}</p>
-          <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 100{{ maxDIH > 0 ? ' | Máx: ' + formatBRL(maxDIH) : '' }}</p>
+          <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 100 | Máx: R$ 1.000</p>
         </div>
         <div>
           <span :style="labelStyle">Contribuição</span>
@@ -569,19 +584,19 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
   </div>
 
   <!-- ── 8. Diária de Incapacidade Temporária (DIT) ── -->
-  <div :style="elegivelDIT ? cardStyle : cardDisabled">
+  <div :style="cardStyle">
     <div :style="{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }">
-      <input v-if="isEditing && elegivelDIT" type="checkbox" :checked="modelValue.dit.ativo" @change="() => toggleCobertura('dit')" :style="{ width: '14px', height: '14px', cursor: 'pointer', flexShrink: 0 }" />
+      <input v-if="isEditing" type="checkbox" :checked="modelValue.dit.ativo" @change="() => toggleCobertura('dit')" :style="{ width: '14px', height: '14px', cursor: 'pointer', flexShrink: 0 }" />
       <div v-else :style="{ width: '14px', height: '14px', borderRadius: '3px', background: modelValue.dit.ativo ? 'oklch(20% 0.05 250)' : 'oklch(88% 0.005 260)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }">
         <svg v-if="modelValue.dit.ativo" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Diária de Incapacidade Temporária (DIT)</p>
-      <span v-if="!elegivelDIT" :style="badgeIndisponivel">Indisponível acima de 65 anos</span>
+
       <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'dit')" @mouseleave="hideTooltip">
         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
       </div>
     </div>
-    <template v-if="modelValue.dit.ativo && elegivelDIT">
+    <template v-if="modelValue.dit.ativo">
       <div :style="grid4">
         <div>
           <span :style="labelStyle">Vigência</span>
@@ -595,7 +610,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <span :style="labelStyle">Capital Segurado (diária) *</span>
           <input v-if="isEditing" type="text" :value="modelValue.dit.capitalSegurado" @input="(e) => onCapitalChange('dit', (e.target as HTMLInputElement).value)" :placeholder="`R$ 1.000,00 – ${formatBRL(maxDIT)}`" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.dit.capitalSegurado || '—' }}</p>
-          <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 1.000{{ maxDIT > 0 ? ' | Máx: ' + formatBRL(maxDIT) : '' }}</p>
+          <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 1.000 | Máx: R$ 30.000.000</p>
         </div>
         <div>
           <span :style="labelStyle">Contribuição</span>
