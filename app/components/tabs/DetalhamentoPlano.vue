@@ -2,7 +2,8 @@
 import { ref, computed, watch } from 'vue'
 import { useJornadaStore } from '~/stores/jornada'
 import { FUNDOS_DISPONIVEIS, HORIZONTE_VALORES, HORIZONTE_COBERTURAS, HORIZONTE_NOMES, VIGENCIA_OPTIONS, PRAZO_PAGAMENTO_OPTIONS, COBERTURA_TOOLTIPS } from '~/data/fundosData'
-import type { Plano, SubPlano, Cobertura, FundoSelecionado } from '~/stores/jornada'
+import type { Plano, SubPlano, Cobertura, FundoSelecionado, SeguroVidaData } from '~/stores/jornada'
+import SeguroVidaBlocos from '~/components/SeguroVidaBlocos.vue'
 
 const props = defineProps<{ onBack?: () => void; onNext?: () => void }>()
 const emit = defineEmits<{ back: []; next: []; 'editing-change': [editing: boolean] }>()
@@ -848,6 +849,15 @@ const continuerDisabled = computed(() => isEditing.value)
             </div>
           </div>
         </div>
+
+        <!-- Novo bloco de coberturas individuais -->
+        <SeguroVidaBlocos
+          v-if="plano.seguroVida"
+          :model-value="(isEditing ? draft.planos.find((x: Plano) => x.id === plano.id) : plano)?.seguroVida || plano.seguroVida"
+          :is-editing="isEditing"
+          :capital-morte-base="0"
+          @update:model-value="(val: SeguroVidaData) => { const p = draft.planos.find((x: Plano) => x.id === plano.id); if (p) p.seguroVida = val }"
+        />
 
         <!-- Tabela de coberturas -->
         <div :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', overflow: 'hidden', marginBottom: '12px' }">

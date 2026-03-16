@@ -33,6 +33,38 @@ export interface Cobertura {
   contribuicaoMensal: string
 }
 
+// Nova estrutura para coberturas individuais do Seguro de Vida
+export interface CoberturaSeguro {
+  ativo: boolean
+  vigencia: string
+  prazoPagamento: string
+  capitalSegurado: string
+  contribuicaoMensal: string
+  contribuicaoAnual: string
+  // Campos extras por cobertura
+  retirarVinculo?: string   // IPA: 'Sim' | 'Não'
+  majorada?: string         // IPA: 'Sim' | 'Não'
+  dihUTI?: string           // DIH: 'Sim' | 'Não'
+  franquiaReduzida?: string // DIT: 'Sim' | 'Não'
+  quantidadeDias?: string   // DIT: '7 dias' | '15 dias'
+  lerDortLtc?: string       // DIT: 'Sim' | 'Não'
+  tipoSAF?: string          // SAF: 'Individual' | 'Familiar'
+}
+export interface SeguroVidaData {
+  vigenciaGlobal: string
+  prazoPagamentoGlobal: string
+  tipoContribuicao: 'mensal' | 'anual'
+  morte: CoberturaSeguro
+  morteTemp: CoberturaSeguro
+  iea: CoberturaSeguro
+  ipa: CoberturaSeguro
+  ied: CoberturaSeguro
+  dg: CoberturaSeguro
+  dih: CoberturaSeguro
+  dit: CoberturaSeguro
+  saf: CoberturaSeguro
+}
+
 export interface SubPlano {
   id: string
   contribuicaoMensal: string
@@ -53,6 +85,7 @@ export interface Plano {
   vigencia: string
   tempoContribuicao: string
   coberturas: Cobertura[]
+  seguroVida?: SeguroVidaData
 }
 
 export interface Proponente {
@@ -201,6 +234,20 @@ const initialDetalhamentoData: DetalhamentoData = {
       produtoRecomendado: 'Horizonte',
       vigencia: 'Vitalícia',
       tempoContribuicao: '20 anos',
+      seguroVida: {
+        vigenciaGlobal: 'Vitalícia',
+        prazoPagamentoGlobal: '5 anos',
+        tipoContribuicao: 'mensal',
+        morte: { ativo: true, vigencia: 'Vitalícia', prazoPagamento: '5 anos', capitalSegurado: '', contribuicaoMensal: '', contribuicaoAnual: '' },
+        morteTemp: { ativo: false, vigencia: '', prazoPagamento: '', capitalSegurado: '', contribuicaoMensal: '', contribuicaoAnual: '' },
+        iea: { ativo: false, vigencia: 'Vitalícia', prazoPagamento: '5 anos', capitalSegurado: '', contribuicaoMensal: '', contribuicaoAnual: '' },
+        ipa: { ativo: false, vigencia: 'Vitalícia', prazoPagamento: '5 anos', capitalSegurado: '', contribuicaoMensal: '', contribuicaoAnual: '', retirarVinculo: 'Não', majorada: 'Não' },
+        ied: { ativo: false, vigencia: 'Vitalícia', prazoPagamento: '5 anos', capitalSegurado: '', contribuicaoMensal: '', contribuicaoAnual: '' },
+        dg: { ativo: false, vigencia: '5 anos', prazoPagamento: '5 anos', capitalSegurado: '', contribuicaoMensal: '', contribuicaoAnual: '' },
+        dih: { ativo: false, vigencia: '5 anos', prazoPagamento: '5 anos', capitalSegurado: '', contribuicaoMensal: '', contribuicaoAnual: '', dihUTI: 'Não' },
+        dit: { ativo: false, vigencia: '5 anos', prazoPagamento: '5 anos', capitalSegurado: '', contribuicaoMensal: '', contribuicaoAnual: '', franquiaReduzida: 'Não', quantidadeDias: '7 dias', lerDortLtc: 'Não' },
+        saf: { ativo: false, vigencia: 'Vitalícia', prazoPagamento: '5 anos', capitalSegurado: 'R$ 12.000,00', contribuicaoMensal: '', contribuicaoAnual: '', tipoSAF: 'Individual' },
+      },
       coberturas: [
         { nome: 'Morte Natural ou Acidental + Adiantamento por Doença Terminal (obrigatório)', valorMin: 'R$ 50.000,00', valorMax: 'R$ 20.000.000,00', vigencia: 'Vitalícia', prazoPagamento: '', capitalSegurado: 'R$ 2.961.000,00', contribuicaoMensal: 'R$ 1.184,40' },
         { nome: 'Indenização Especial de Morte por Acidente (IEA)', valorMin: 'R$ 50.000,00', valorMax: 'R$ 10.000.000,00', vigencia: 'Vitalícia', prazoPagamento: '', capitalSegurado: 'R$ 1.484.000,00', contribuicaoMensal: 'R$ 593,60' },
