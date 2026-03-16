@@ -8,7 +8,7 @@ function normalizePeriodo(p: string): string {
   return p
 }
 import { HORIZONTE_VALORES } from '~/data/fundosData'
-import type { Plano, Cobertura, FundoSelecionado } from '~/stores/jornada'
+import type { Plano, Cobertura, FundoSelecionado, SeguroVidaData } from '~/stores/jornada'
 
 const emit = defineEmits<{ back: [] }>()
 const store = useJornadaStore()
@@ -368,35 +368,120 @@ async function handleSalvar() {
 
           <!-- Seguro de Vida -->
           <template v-else>
-            <div v-if="plano.coberturas.length > 0" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', overflow: 'hidden' }">
-              <table :style="{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', tableLayout: 'fixed' }">
-                <colgroup>
-                  <col style="width: auto" />
-                  <col style="width: 148px" />
-                  <col style="width: 120px" />
-                  <col style="width: 138px" />
-                  <col style="width: 138px" />
-                </colgroup>
-                <thead>
-                  <tr :style="{ background: 'oklch(95% 0.005 260)', borderBottom: '1px solid oklch(90% 0.005 260)' }">
+            <!-- Nova estrutura seguroVida -->
+            <template v-if="plano.seguroVida">
+              <!-- Preferência do Proponente -->
+              <div :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', padding: '12px 16px', marginBottom: '10px', background: 'oklch(97.5% 0.002 260)' }">
+                <p :style="{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'oklch(40% 0.05 250)', marginBottom: '8px' }">Preferência do Proponente</p>
+                <div :style="{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }">
+                  <div><span :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)' }">Vigência: </span><span :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(25% 0.05 250)' }">{{ plano.seguroVida.vigenciaGlobal || '—' }}</span></div>
+                  <div><span :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)' }">Prazo de Pagamento: </span><span :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(25% 0.05 250)' }">{{ plano.seguroVida.prazoPagamentoGlobal || '—' }}</span></div>
+                </div>
+              </div>
+              <!-- Tabela de coberturas ativas -->
+              <div :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', overflow: 'hidden', marginBottom: '10px' }">
+                <table :style="{ width: '100%', fontSize: '11px', borderCollapse: 'collapse' }">
+                  <thead>
+                    <tr :style="{ background: 'oklch(95% 0.005 260)', borderBottom: '1px solid oklch(90% 0.005 260)' }">
+                      <th :style="{ textAlign: 'left', padding: '7px 12px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)' }">Cobertura</th>
+                      <th :style="{ textAlign: 'center', padding: '7px 8px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Capital Segurado</th>
+                      <th :style="{ textAlign: 'right', padding: '7px 12px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? 'Contribuição Anual' : 'Contribuição Mensal' }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr :style="{ borderBottom: '1px solid oklch(93% 0.003 260)' }">
+                      <td :style="{ padding: '8px 12px', color: 'oklch(25% 0.05 250)', fontWeight: 600, fontSize: '11px' }">Morte Natural ou Acidental + Adiantamento por Doença Terminal</td>
+                      <td :style="{ padding: '8px 8px', textAlign: 'center', fontSize: '11px', color: 'oklch(35% 0.05 250)', fontWeight: 500 }">{{ plano.seguroVida.morte.capitalSegurado || '—' }}</td>
+                      <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600 }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? plano.seguroVida.morte.contribuicaoAnual : plano.seguroVida.morte.contribuicaoMensal || '—' }}</td>
+                    </tr>
+                    <tr v-if="plano.seguroVida.morteTemp.ativo" :style="{ borderBottom: '1px solid oklch(93% 0.003 260)' }">
+                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">Morte Natural ou Acidental (Vigência Temporária)</td>
+                      <td :style="{ padding: '8px 8px', textAlign: 'center', fontSize: '11px', color: 'oklch(35% 0.05 250)', fontWeight: 500 }">{{ plano.seguroVida.morteTemp.capitalSegurado || '—' }}</td>
+                      <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600 }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? plano.seguroVida.morteTemp.contribuicaoAnual : plano.seguroVida.morteTemp.contribuicaoMensal || '—' }}</td>
+                    </tr>
+                    <tr v-if="plano.seguroVida.iea.ativo" :style="{ borderBottom: '1px solid oklch(93% 0.003 260)' }">
+                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">Indenização Especial de Morte por Acidente (IEA)</td>
+                      <td :style="{ padding: '8px 8px', textAlign: 'center', fontSize: '11px', color: 'oklch(35% 0.05 250)', fontWeight: 500 }">{{ plano.seguroVida.iea.capitalSegurado || '—' }}</td>
+                      <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600 }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? plano.seguroVida.iea.contribuicaoAnual : plano.seguroVida.iea.contribuicaoMensal || '—' }}</td>
+                    </tr>
+                    <tr v-if="plano.seguroVida.ipa.ativo" :style="{ borderBottom: '1px solid oklch(93% 0.003 260)' }">
+                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">Invalidez Permanente Total ou Parcial por Acidente (IPA)</td>
+                      <td :style="{ padding: '8px 8px', textAlign: 'center', fontSize: '11px', color: 'oklch(35% 0.05 250)', fontWeight: 500 }">{{ plano.seguroVida.ipa.capitalSegurado || '—' }}</td>
+                      <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600 }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? plano.seguroVida.ipa.contribuicaoAnual : plano.seguroVida.ipa.contribuicaoMensal || '—' }}</td>
+                    </tr>
+                    <tr v-if="plano.seguroVida.ied.ativo" :style="{ borderBottom: '1px solid oklch(93% 0.003 260)' }">
+                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">Indenização Especial de Invalidez por Doença (IED)</td>
+                      <td :style="{ padding: '8px 8px', textAlign: 'center', fontSize: '11px', color: 'oklch(35% 0.05 250)', fontWeight: 500 }">{{ plano.seguroVida.ied.capitalSegurado || '—' }}</td>
+                      <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600 }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? plano.seguroVida.ied.contribuicaoAnual : plano.seguroVida.ied.contribuicaoMensal || '—' }}</td>
+                    </tr>
+                    <tr v-if="plano.seguroVida.dg.ativo" :style="{ borderBottom: '1px solid oklch(93% 0.003 260)' }">
+                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">Doenças Graves (DG)</td>
+                      <td :style="{ padding: '8px 8px', textAlign: 'center', fontSize: '11px', color: 'oklch(35% 0.05 250)', fontWeight: 500 }">{{ plano.seguroVida.dg.capitalSegurado || '—' }}</td>
+                      <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600 }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? plano.seguroVida.dg.contribuicaoAnual : plano.seguroVida.dg.contribuicaoMensal || '—' }}</td>
+                    </tr>
+                    <tr v-if="plano.seguroVida.dih.ativo" :style="{ borderBottom: '1px solid oklch(93% 0.003 260)' }">
+                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">Diária de Internação Hospitalar (DIH){{ plano.seguroVida.dih.dihUTI === 'Sim' ? ' + UTI' : '' }}</td>
+                      <td :style="{ padding: '8px 8px', textAlign: 'center', fontSize: '11px', color: 'oklch(35% 0.05 250)', fontWeight: 500 }">{{ plano.seguroVida.dih.capitalSegurado || '—' }}</td>
+                      <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600 }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? plano.seguroVida.dih.contribuicaoAnual : plano.seguroVida.dih.contribuicaoMensal || '—' }}</td>
+                    </tr>
+                    <tr v-if="plano.seguroVida.dit.ativo" :style="{ borderBottom: '1px solid oklch(93% 0.003 260)' }">
+                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">Diária de Incapacidade Temporária (DIT){{ plano.seguroVida.dit.franquiaReduzida === 'Sim' ? ` – Franquia ${plano.seguroVida.dit.quantidadeDias}` : '' }}{{ plano.seguroVida.dit.lerDortLtc === 'Sim' ? ' c/ LER/DORT' : '' }}</td>
+                      <td :style="{ padding: '8px 8px', textAlign: 'center', fontSize: '11px', color: 'oklch(35% 0.05 250)', fontWeight: 500 }">{{ plano.seguroVida.dit.capitalSegurado || '—' }}</td>
+                      <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600 }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? plano.seguroVida.dit.contribuicaoAnual : plano.seguroVida.dit.contribuicaoMensal || '—' }}</td>
+                    </tr>
+                    <tr v-if="plano.seguroVida.saf.ativo">
+                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">Serviço de Assistência Funeral (SAF {{ plano.seguroVida.saf.tipoSAF || 'Individual' }})</td>
+                      <td :style="{ padding: '8px 8px', textAlign: 'center', fontSize: '11px', color: 'oklch(35% 0.05 250)', fontWeight: 500 }">R$ 12.000,00</td>
+                      <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600 }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? plano.seguroVida.saf.contribuicaoAnual : plano.seguroVida.saf.contribuicaoMensal || '—' }}</td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr :style="{ background: 'oklch(95% 0.005 260)', borderTop: '2px solid oklch(88% 0.005 260)' }">
+                      <td colspan="2" :style="{ padding: '8px 12px', fontSize: '11px', fontWeight: 700, color: 'oklch(30% 0.05 250)', textAlign: 'right' }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? 'Total Anual' : 'Total Mensal' }}</td>
+                      <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '12px', fontWeight: 700, color: 'oklch(20% 0.1 145)' }">
+                        {{ (() => {
+                          const sv = plano.seguroVida as SeguroVidaData
+                          const keys = ['morte','morteTemp','iea','ipa','ied','dg','dih','dit','saf'] as const
+                          let total = 0
+                          for (const k of keys) {
+                            const c = sv[k] as any
+                            if (c.ativo !== false) {
+                              const val = sv.tipoContribuicao === 'anual' ? c.contribuicaoAnual : c.contribuicaoMensal
+                              if (val) total += parseFloat(val.replace(/[R$\s.]/g,'').replace(',','.'))||0
+                            }
+                          }
+                          return total > 0 ? total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—'
+                        })() }}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </template>
+            <!-- Fallback: tabela antiga -->
+            <template v-else-if="plano.coberturas.length > 0">
+              <div :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', overflow: 'hidden' }">
+                <table :style="{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', tableLayout: 'fixed' }">
+                  <colgroup><col style="width: auto" /><col style="width: 148px" /><col style="width: 120px" /><col style="width: 138px" /><col style="width: 138px" /></colgroup>
+                  <thead><tr :style="{ background: 'oklch(95% 0.005 260)', borderBottom: '1px solid oklch(90% 0.005 260)' }">
                     <th :style="{ textAlign: 'left', padding: '7px 16px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Cobertura</th>
                     <th :style="{ textAlign: 'center', padding: '7px 6px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Vigência</th>
                     <th :style="{ textAlign: 'center', padding: '7px 6px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Prazo de Pagamento</th>
                     <th :style="{ textAlign: 'right', padding: '7px 6px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Capital Segurado</th>
                     <th :style="{ textAlign: 'right', padding: '7px 16px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">Contribuição Mensal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(cob, ci) in plano.coberturas" :key="ci" :style="{ borderBottom: ci < plano.coberturas.length - 1 ? '1px solid oklch(93% 0.003 260)' : 'none' }">
-                    <td :style="{ padding: '10px 10px', color: 'oklch(30% 0.05 250)', fontWeight: ci === 0 ? 600 : 400, fontSize: '11px', whiteSpace: 'normal', wordBreak: 'break-word' }">{{ cob.nome }}</td>
-                    <td :style="{ padding: '10px 6px', textAlign: 'center', fontSize: '11px', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">{{ cob.vigencia || '—' }}</td>
-                    <td :style="{ padding: '10px 6px', textAlign: 'center', fontSize: '11px', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">{{ cob.prazoPagamento || '—' }}</td>
-                    <td :style="{ padding: '10px 6px', textAlign: 'right', fontSize: '11px', color: 'oklch(30% 0.05 250)', fontWeight: 500, whiteSpace: 'nowrap' }">{{ cob.capitalSegurado || (HORIZONTE_VALORES as any)[cob.nome]?.[cob.vigencia]?.cs || calcCapitalSegurado(cob) || '—' }}</td>
-                    <td :style="{ padding: '10px 16px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600, whiteSpace: 'nowrap' }">{{ cob.contribuicaoMensal || (HORIZONTE_VALORES as any)[cob.nome]?.[cob.vigencia]?.cm || '—' }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                  </tr></thead>
+                  <tbody>
+                    <tr v-for="(cob, ci) in plano.coberturas" :key="ci" :style="{ borderBottom: ci < plano.coberturas.length - 1 ? '1px solid oklch(93% 0.003 260)' : 'none' }">
+                      <td :style="{ padding: '10px 10px', color: 'oklch(30% 0.05 250)', fontWeight: ci === 0 ? 600 : 400, fontSize: '11px', whiteSpace: 'normal', wordBreak: 'break-word' }">{{ cob.nome }}</td>
+                      <td :style="{ padding: '10px 6px', textAlign: 'center', fontSize: '11px', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">{{ cob.vigencia || '—' }}</td>
+                      <td :style="{ padding: '10px 6px', textAlign: 'center', fontSize: '11px', color: 'oklch(45% 0.02 250)', whiteSpace: 'nowrap' }">{{ cob.prazoPagamento || '—' }}</td>
+                      <td :style="{ padding: '10px 6px', textAlign: 'right', fontSize: '11px', color: 'oklch(30% 0.05 250)', fontWeight: 500, whiteSpace: 'nowrap' }">{{ cob.capitalSegurado || (HORIZONTE_VALORES as any)[cob.nome]?.[cob.vigencia]?.cs || calcCapitalSegurado(cob) || '—' }}</td>
+                      <td :style="{ padding: '10px 16px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600, whiteSpace: 'nowrap' }">{{ cob.contribuicaoMensal || (HORIZONTE_VALORES as any)[cob.nome]?.[cob.vigencia]?.cm || '—' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </template>
           </template>
         </div>
       </template>
