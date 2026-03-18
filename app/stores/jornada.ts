@@ -168,10 +168,10 @@ const initialResumoData: ResumoData = {
     ],
   },
   vulnerabilidades: [
-    { iconKey: 'Users', titulo: 'Ausência Prematura', descricao: 'Impacto severo no padrão de vida dos filhos e dependentes devido à perda da renda principal.', solucao: 'Seguro de Vida Vitalício' },
-    { iconKey: 'Briefcase', titulo: 'Invalidez Laborativa', descricao: 'Interrupção da capacidade de gerar receita por doença ou acidente, comprometendo o fluxo de caixa.', solucao: 'Seguro de Invalidez + DIT' },
-    { iconKey: 'Heart', titulo: 'Doenças Graves', descricao: 'Custos elevados de tratamento que podem consumir rapidamente a reserva de liquidez e investimentos.', solucao: 'Cobertura para Doenças Graves' },
-    { iconKey: 'Shield', titulo: 'Sucessão Patrimonial', descricao: 'Custos de inventário e impostos (ITCMD) podem bloquear até 20% do patrimônio familiar.', solucao: 'Seguro para Custeio de Inventário' },
+    { iconKey: 'Users', titulo: 'Ausência Prematura', descricao: 'Impacto severo no padrão de vida dos filhos e dependentes devido à perda da renda principal.', solucao: 'Proteção de Vida Vitalício + Proteção de Vida Adicional Temporária' },
+    { iconKey: 'Briefcase', titulo: 'Invalidez Laborativa', descricao: 'Interrupção da capacidade de gerar receita por doença ou acidente, comprometendo o fluxo de caixa.', solucao: 'Proteção de Invalidez Permanente por Acidente Majorada' },
+    { iconKey: 'Heart', titulo: 'Doenças Graves', descricao: 'Custos elevados de tratamento que podem consumir rapidamente a reserva de liquidez e investimentos.', solucao: 'Proteção para Diagnóstico de Doenças Graves' },
+    { iconKey: 'Shield', titulo: 'Sucessão Patrimonial', descricao: 'Custos de inventário e impostos (ITCMD) podem bloquear até 20% do patrimônio familiar.', solucao: 'Aporte em Previdência Privada' },
     { iconKey: 'TrendingUp', titulo: 'Longevidade Financeira', descricao: 'Risco de sobreviver à capacidade da reserva financeira acumulada (viver mais que o dinheiro).', solucao: 'Aporte em Previdência Privada' },
   ],
   timeline: [

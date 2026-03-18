@@ -61,7 +61,7 @@
           <p v-else class="field-value">{{ formatDate(proponente.dataNascimento) }}</p>
         </div>
         <div>
-          <p class="field-label">Gênero</p>
+          <p class="field-label">Gênero <span style="color:#dc2626">*</span></p>
           <select v-if="isEditing" v-model="draftProponente.genero" class="inline-edit" style="cursor:pointer">
             <option value="">Selecione...</option>
             <option value="Feminino">Feminino</option>
@@ -83,7 +83,7 @@
           <p v-else class="field-value">{{ proponente.email || '—' }}</p>
         </div>
         <div style="position:relative">
-          <p class="field-label">Profissão</p>
+          <p class="field-label">Profissão <span style="color:#dc2626">*</span></p>
           <template v-if="isEditing">
             <input
               v-model="ocupacaoSearch"
@@ -210,13 +210,16 @@
               <p style="font-size:12px;color:oklch(45% 0.02 250);margin:0 0 4px">{{ vuln.descricao }}</p>
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                 <span style="font-size:12px;color:oklch(45% 0.02 250);white-space:nowrap">Solução Recomendada:</span>
-                <select v-if="isEditing" v-model="draft.vulnerabilidades[i].solucao" style="font-size:12px;color:#1e40af;font-weight:500;border:1px solid oklch(80% 0.005 260);border-radius:4px;padding:3px 6px;background:#fff;max-width:280px;cursor:pointer">
+                <select v-if="isEditing" v-model="draft.vulnerabilidades[i].solucao" style="font-size:12px;color:#1e40af;font-weight:500;border:1px solid oklch(80% 0.005 260);border-radius:4px;padding:3px 6px;background:#fff;max-width:320px;cursor:pointer">
                   <option value="">Selecione...</option>
+                  <option>Proteção de Vida Vitalício + Proteção de Vida Adicional Temporária</option>
+                  <option>Proteção de Invalidez Permanente por Acidente Majorada</option>
+                  <option>Proteção para Diagnóstico de Doenças Graves</option>
+                  <option>Aporte em Previdência Privada</option>
                   <option>Seguro de Vida Vitalício</option>
                   <option>Seguro de Invalidez + DIT</option>
                   <option>Cobertura para Doenças Graves</option>
                   <option>Seguro para Custeio de Inventário</option>
-                  <option>Aporte em Previdência Privada</option>
                 </select>
                 <span v-else style="font-size:12px;color:#1e40af;font-weight:500"><strong>{{ vuln.solucao }}</strong></span>
               </div>
@@ -410,7 +413,7 @@
           Salvar
         </button>
       </template>
-      <button @click="handleContinuar" :disabled="isEditing" :style="{ display:'flex', alignItems:'center', gap:'8px', background: isEditing ? 'oklch(80% 0.005 260)' : 'oklch(20% 0.05 250)', color: isEditing ? 'oklch(50% 0.01 260)' : '#fff', padding:'10px 24px', borderRadius:'8px', fontSize:'14px', fontWeight:'500', border:'none', cursor: isEditing ? 'not-allowed' : 'pointer', opacity: isEditing ? 0.6 : 1 }">
+      <button @click="handleContinuar" :disabled="!!continueBlockedMsg" :title="continueBlockedMsg || undefined" :style="{ display:'flex', alignItems:'center', gap:'8px', background: continueBlockedMsg ? 'oklch(80% 0.005 260)' : 'oklch(20% 0.05 250)', color: continueBlockedMsg ? 'oklch(50% 0.01 260)' : '#fff', padding:'10px 24px', borderRadius:'8px', fontSize:'14px', fontWeight:'500', border:'none', cursor: continueBlockedMsg ? 'not-allowed' : 'pointer', opacity: continueBlockedMsg ? 0.6 : 1 }">
         Continuar
         <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
@@ -506,6 +509,8 @@ const handleSave = () => {
   if (!draftProponente.value.telefone?.trim()) erros.push('Telefone')
   if (!draftProponente.value.email?.trim()) erros.push('E-mail')
   if (!draftProponente.value.rendaMensal?.trim()) erros.push('Renda Mensal')
+  if (!draftProponente.value.genero?.trim()) erros.push('Gênero')
+  if (!draftProponente.value.ocupacao?.trim()) erros.push('Profissão')
   if (draftProponente.value.ocupacao === 'OUTROS (ESPECIFICAR)' && !draftProponente.value.especificacaoOcupacao?.trim()) erros.push('Especificação da Ocupação')
   if (erros.length > 0) {
     validationErrors.value = erros
@@ -520,8 +525,42 @@ const handleSave = () => {
   emit('editing-change', false)
 }
 
+// Computed: verifica se os campos obrigatórios do proponente estão preenchidos
+const camposObrigatoriosPreenchidos = computed(() => {
+  const p = store.detalhamentoData.proponente
+  return !!p.cpf?.trim()
+    && !!p.nomeCompleto?.trim()
+    && !!p.dataNascimento?.trim()
+    && !!p.telefone?.trim()
+    && !!p.email?.trim()
+    && !!p.rendaMensal?.trim()
+    && !!p.genero?.trim()
+    && !!p.ocupacao?.trim()
+})
+
+const continueBlockedMsg = computed(() => {
+  if (isEditing.value) return 'Salve as edições antes de continuar'
+  if (!camposObrigatoriosPreenchidos.value) return 'Preencha todos os campos obrigatórios (marcados com *) antes de continuar'
+  return ''
+})
+
 const handleContinuar = () => {
   if (isEditing.value) return
+  if (!camposObrigatoriosPreenchidos.value) {
+    // Mostrar quais campos estão faltando
+    const p = store.detalhamentoData.proponente
+    const erros: string[] = []
+    if (!p.cpf?.trim()) erros.push('CPF')
+    if (!p.nomeCompleto?.trim()) erros.push('Nome Completo')
+    if (!p.dataNascimento?.trim()) erros.push('Data de Nascimento')
+    if (!p.telefone?.trim()) erros.push('Telefone')
+    if (!p.email?.trim()) erros.push('E-mail')
+    if (!p.rendaMensal?.trim()) erros.push('Renda Mensal')
+    if (!p.genero?.trim()) erros.push('Gênero')
+    if (!p.ocupacao?.trim()) erros.push('Profissão')
+    validationErrors.value = erros
+    return
+  }
   emit('next')
 }
 </script>

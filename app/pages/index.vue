@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useJornadaStore } from '~/stores/jornada'
 
 useHead({ title: 'Gerar Estudo - Previdência e Seguro de Vida' })
 
@@ -7,6 +8,43 @@ const activeTab = ref<'resumo' | 'detalhamento' | 'revisao'>('resumo')
 const editingTab = ref<'resumo' | 'detalhamento' | 'revisao' | null>(null)
 const opacity = ref(1)
 const mainRef = ref<HTMLElement | null>(null)
+const store = useJornadaStore()
+
+// Verifica se os campos obrigatórios do Detalhamento estão preenchidos
+const detalhamentoValido = computed(() => {
+  const planos = store.detalhamentoData.planos
+  if (!planos || planos.length === 0) return false
+  for (const plano of planos) {
+    if (plano.tipo === 'previdencia') {
+      // Verifica se tem pelo menos um subplano com contribuição e fundo
+      for (const sub of plano.subPlanos) {
+        if (!sub.contribuicaoMensal?.trim()) return false
+        if (!sub.tipoPlano?.trim()) return false
+      }
+    } else if (plano.tipo === 'seguro') {
+      // Verifica se tem capital segurado de morte preenchido
+      if (plano.seguroVida) {
+        if (!plano.seguroVida.morte?.capitalSegurado?.trim()) return false
+        if (!plano.seguroVida.vigenciaGlobal?.trim()) return false
+        if (!plano.seguroVida.prazoPagamentoGlobal?.trim()) return false
+      }
+    }
+  }
+  return true
+})
+
+// Verifica se os campos obrigatórios do Resumo estão preenchidos
+const resumoValido = computed(() => {
+  const p = store.detalhamentoData.proponente
+  return !!p.cpf?.trim()
+    && !!p.nomeCompleto?.trim()
+    && !!p.dataNascimento?.trim()
+    && !!p.telefone?.trim()
+    && !!p.email?.trim()
+    && !!p.rendaMensal?.trim()
+    && !!(p as any).genero?.trim()
+    && !!p.ocupacao?.trim()
+})
 
 const tabs = [
   { id: 'resumo', label: 'Resumo Jornada de Vida' },
@@ -39,6 +77,16 @@ function switchTab(tab: string) {
   if (target === activeTab.value) return
   if (editingTab.value !== null) {
     alert('Salve as alterações antes de continuar.')
+    return
+  }
+  // Bloquear navegação para Detalhamento ou Revisão se Resumo não estiver válido
+  if ((target === 'detalhamento' || target === 'revisao') && !resumoValido.value) {
+    alert('Preencha todos os campos obrigatórios do Resumo Jornada de Vida (marcados com *) antes de continuar.')
+    return
+  }
+  // Bloquear navegação para Revisão se Detalhamento não estiver válido
+  if (target === 'revisao' && !detalhamentoValido.value) {
+    alert('Preencha todos os campos obrigatórios do Detalhamento do Plano antes de continuar para a Revisão do Estudo.')
     return
   }
   doSwitch(target)

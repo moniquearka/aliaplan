@@ -468,7 +468,74 @@ async function handleSalvar() {
                   </tfoot>
                 </table>
               </div>
-            </template>
+            <!-- Descrições das coberturas ativas -->
+            <div :style="{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }">
+              <!-- Morte obrigatória -->
+              <div :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }">
+                <div :style="{ padding: '8px 12px', background: 'oklch(97.5% 0.002 260)', borderBottom: '1px solid oklch(93% 0.003 260)' }">
+                  <p :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: '0 0 3px 0' }">
+                    {{ (plano.seguroVida.vigenciaGlobal || '').toLowerCase().includes('tempor') ? 'Morte Básica' : 'Morte Natural ou Acidental + Adiantamento por Doença Terminal (Obrigatório)' }}
+                  </p>
+                  <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }">Seus beneficiários receberão o valor integral da indenização em caso de morte natural ou acidental. Caso seja constatado estado terminal da doença, você poderá optar por receber, antecipadamente, o valor integral da sua indenização por morte da cobertura básica.</p>
+                </div>
+              </div>
+              <!-- Morte Temporária -->
+              <div v-if="plano.seguroVida.morteTemp.ativo" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }">
+                <div :style="{ padding: '8px 12px', background: 'oklch(97.5% 0.002 260)', borderBottom: '1px solid oklch(93% 0.003 260)' }">
+                  <p :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: '0 0 3px 0' }">Morte Natural ou Acidental (Vigência Temporária)</p>
+                  <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }">Seus beneficiários receberão o valor integral da indenização em caso de morte natural ou acidental.</p>
+                </div>
+              </div>
+              <!-- IEA -->
+              <div v-if="plano.seguroVida.iea.ativo" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }">
+                <div :style="{ padding: '8px 12px', background: 'oklch(97.5% 0.002 260)', borderBottom: '1px solid oklch(93% 0.003 260)' }">
+                  <p :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: '0 0 3px 0' }">Indenização Especial de Morte por Acidente (IEA)</p>
+                  <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }">Seus beneficiários receberão uma indenização extra em caso de morte exclusivamente acidental.</p>
+                </div>
+              </div>
+              <!-- IPA -->
+              <div v-if="plano.seguroVida.ipa.ativo" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }">
+                <div :style="{ padding: '8px 12px', background: 'oklch(97.5% 0.002 260)', borderBottom: '1px solid oklch(93% 0.003 260)' }">
+                  <p :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: '0 0 3px 0' }">Invalidez Permanente Total ou Parcial por Acidente (IPA)</p>
+                  <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }">Você poderá receber a indenização total ou um percentual do valor, de acordo com o grau da invalidez.</p>
+                </div>
+              </div>
+              <!-- IED -->
+              <div v-if="plano.seguroVida.ied.ativo" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }">
+                <div :style="{ padding: '8px 12px', background: 'oklch(97.5% 0.002 260)', borderBottom: '1px solid oklch(93% 0.003 260)' }">
+                  <p :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: '0 0 3px 0' }">Indenização Especial de Invalidez por Doença (IED)</p>
+                  <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }">Você poderá receber indenização em caso de perda de forma total e permanente, em decorrência por doença, da capacidade de exercer qualquer atividade que lhe garanta subsistência.</p>
+                </div>
+              </div>
+              <!-- DG -->
+              <div v-if="plano.seguroVida.dg.ativo" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }">
+                <div :style="{ padding: '8px 12px', background: 'oklch(97.5% 0.002 260)', borderBottom: '1px solid oklch(93% 0.003 260)' }">
+                  <p :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: '0 0 3px 0' }">Diagnóstico de Doenças Graves (DG)</p>
+                  <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }">Você poderá receber indenização em caso de diagnóstico de doenças graves como câncer, infarto, AVC, Alzheimer, Parkinson, ELA, insuficiência renal crônica, entre outras.</p>
+                </div>
+              </div>
+              <!-- DIH -->
+              <div v-if="plano.seguroVida.dih.ativo" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }">
+                <div :style="{ padding: '8px 12px', background: 'oklch(97.5% 0.002 260)', borderBottom: '1px solid oklch(93% 0.003 260)' }">
+                  <p :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: '0 0 3px 0' }">Diária de Internação Hospitalar (DIH){{ plano.seguroVida.dih.dihUTI === 'Sim' ? ' + UTI' : '' }}</p>
+                  <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }">Você poderá receber a indenização total ou um percentual do valor por dia de internação hospitalar, a partir do primeiro dia, seja por doença ou acidente.</p>
+                </div>
+              </div>
+              <!-- DIT -->
+              <div v-if="plano.seguroVida.dit.ativo" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }">
+                <div :style="{ padding: '8px 12px', background: 'oklch(97.5% 0.002 260)', borderBottom: '1px solid oklch(93% 0.003 260)' }">
+                  <p :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: '0 0 3px 0' }">Diária de Incapacidade Temporária (DIT){{ plano.seguroVida.dit.franquiaReduzida === 'Sim' ? ' – Franquia 7 dias' : '' }}{{ plano.seguroVida.dit.lerDortLtc === 'Sim' ? ' c/ LER/DORT' : '' }}</p>
+                  <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }">Você poderá receber a indenização diária caso fique impossibilitado de exercer suas atividades profissionais por mais de 15 dias consecutivos, em decorrência de doença ou acidente.</p>
+                </div>
+              </div>
+              <!-- SAF -->
+              <div v-if="plano.seguroVida.saf.ativo" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }">
+                <div :style="{ padding: '8px 12px', background: 'oklch(97.5% 0.002 260)', borderBottom: '1px solid oklch(93% 0.003 260)' }">
+                  <p :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: '0 0 3px 0' }">Serviço de Assistência Funeral (SAF {{ plano.seguroVida.saf.tipoSAF || 'Individual' }})</p>
+                  <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }">Nossa empresa parceira irá providenciar e custear todos os serviços que envolvem o funeral. Se acharem melhor, faremos o reembolso das despesas, respeitado o limite de valor da sua escolha: R$ 12.000,00.</p>
+                </div>
+              </div>
+            </div>
             <!-- Fallback: tabela antiga -->
             <template v-else-if="plano.coberturas.length > 0">
               <div :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', overflow: 'hidden' }">
@@ -497,7 +564,7 @@ async function handleSalvar() {
             <!-- Assistências & Benefícios (Seguro de Vida) -->
             <template v-if="plano.seguroVida">
               <div :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', padding: '12px 16px', marginTop: '10px', background: 'oklch(98.5% 0.002 260)' }">
-                <p :style="{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'oklch(40% 0.05 250)', marginBottom: '10px', marginTop: 0 }">Benefícios desse produto</p>
+                <p :style="{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'oklch(40% 0.05 250)', marginBottom: '10px', marginTop: 0 }">Benefícios deste produto</p>
                 <div :style="{ display: 'flex', flexDirection: 'column', gap: '10px' }">
                   <!-- Assistência Domiciliar -->
                   <div>
@@ -511,6 +578,22 @@ async function handleSalvar() {
                     <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: '0 0 2px 0', lineHeight: 1.5 }">Este Seguro Viagem é garantido pela HERO Corretora de Seguros LTDA – Código SUSEP: 212116101.</p>
                     <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: '0 0 2px 0', lineHeight: 1.5 }">Representante de Seguro: HERO MGA SERVIÇOS LTDA – CNPJ: 45.385.865/0001-51.</p>
                     <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5 }">Seguradora GENERALI BRASIL SEGUROS S.A. – CNPJ: 33.072.307/0001-57 – Código SUSEP: 0590-8, processo SUSEP 15414.648189/2023-26.</p>
+                  </div>
+                </div>
+                <!-- Características do seu seguro -->
+                <div :style="{ borderTop: '1px solid oklch(90% 0.005 260)', marginTop: '14px', paddingTop: '14px' }">
+                  <p :style="{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'oklch(40% 0.05 250)', marginBottom: '10px', marginTop: 0 }">Características do seu seguro</p>
+                  <div :style="{ display: 'flex', flexDirection: 'column', gap: '10px' }">
+                    <div>
+                      <p :style="{ fontSize: '11px', fontWeight: 700, color: 'oklch(25% 0.05 250)', margin: '0 0 3px 0' }">Entenda a evolução do Valor de Resgate</p>
+                      <p :style="{ fontSize: '11px', color: 'oklch(40% 0.02 250)', margin: '0 0 4px 0', lineHeight: 1.55 }">Quanto maior o tempo de permanência no plano, maior é o percentual disponível para resgate em caso de imprevistos financeiros.</p>
+                      <p :style="{ fontSize: '11px', color: 'oklch(40% 0.02 250)', margin: '0 0 4px 0', lineHeight: 1.55 }">Funciona assim: em caso de cancelamento do seguro, você passa a ter acesso ao valor total de resgate constituído. Se houver uma redução no capital segurado, você terá acesso à parte desse valor. Consulte as Condições do Seguro de Vida para mais informações.</p>
+                      <p :style="{ fontSize: '11px', color: 'oklch(40% 0.02 250)', margin: 0, lineHeight: 1.55 }">O valor de resgate não corresponde à devolução dos pagamentos realizados.</p>
+                    </div>
+                    <div>
+                      <p :style="{ fontSize: '11px', fontWeight: 700, color: 'oklch(25% 0.05 250)', margin: '0 0 3px 0' }">Entenda como funciona o Saldamento</p>
+                      <p :style="{ fontSize: '11px', color: 'oklch(40% 0.02 250)', margin: 0, lineHeight: 1.55 }">Se você ficar impossibilitado de pagar as suas parcelas, tem a opção de usar o valor de resgate para saldar, antecipadamente, a cobertura básica do seguro. A partir disso, a sua indenização será reduzida proporcionalmente, sem possibilidade de voltar ao valor original. Este recurso permite que você fique isento dos pagamentos e continue protegido pela vigência que contratou. As coberturas adicionais que não estiverem quitadas serão canceladas, mas as assistências continuarão inalteradas.</p>
+                    </div>
                   </div>
                 </div>
                 <!-- Assistências marcadas -->
@@ -545,8 +628,11 @@ async function handleSalvar() {
 
       <!-- Validade do estudo + Disclaimers -->
       <div :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', padding: '10px 16px', background: '#f8fafc', marginTop: '8px', marginBottom: '4px' }">
-        <p :style="{ fontSize: '12px', color: 'oklch(45% 0.02 250)', fontStyle: 'italic', margin: '0 0 10px 0', textAlign: 'left' }">
+        <p :style="{ fontSize: '12px', color: 'oklch(45% 0.02 250)', fontStyle: 'italic', margin: '0 0 4px 0', textAlign: 'left' }">
           Estudo com validade de 7 dias úteis a partir da data {{ new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) }}.
+        </p>
+        <p :style="{ fontSize: '11px', color: 'oklch(50% 0.02 250)', margin: '0 0 10px 0', textAlign: 'left', lineHeight: 1.5 }">
+          Esta simulação é um exemplo e não representa garantia dos dados apresentados ou dos resultados obtidos.
         </p>
         <template v-if="resumoData.produtoSelecionado !== 'seguro'">
           <p :style="{ fontSize: '11px', color: 'oklch(50% 0.02 250)', margin: '0 0 6px 0', textAlign: 'left', lineHeight: 1.5 }">
@@ -555,6 +641,21 @@ async function handleSalvar() {
           <p :style="{ fontSize: '11px', color: 'oklch(50% 0.02 250)', margin: 0, textAlign: 'left', lineHeight: 1.5 }">
             Os planos são administrados pela Icatu Seguros S.A., inscrita no CNPJ/MF sob o nº 42.283.770/0001-39. A Icatu Seguros não promete rentabilidade e/ou resultados financeiros durante os períodos de diferimento e de pagamento do benefício sob a forma de renda, com base no desempenho do respectivo fundo de investimento, no desempenho alheio ou no de quaisquer ativos financeiros e/ou modalidades operacionais disponíveis no âmbito do mercado financeiro.
           </p>
+        </template>
+        <!-- Observações Gerais Seguro de Vida -->
+        <template v-if="detalhamentoData.planos.some(p => p.seguroVida) || resumoData.produtoSelecionado === 'seguro' || resumoData.produtoSelecionado === 'ambos'">
+          <div :style="{ borderTop: '1px solid oklch(90% 0.005 260)', marginTop: '10px', paddingTop: '10px' }">
+            <p :style="{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'oklch(40% 0.05 250)', margin: '0 0 8px 0' }">Observações Gerais - Seguro de Vida</p>
+            <ul :style="{ fontSize: '11px', color: 'oklch(50% 0.02 250)', margin: 0, paddingLeft: '0', listStyle: 'none', lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: '5px' }">
+              <li :style="{ display: 'flex', gap: '6px' }"><span>•</span><span>Os valores da indenização e do pagamento serão atualizados anualmente apenas pelo IPCA.</span></li>
+              <li :style="{ display: 'flex', gap: '6px' }"><span>•</span><span>A reserva será atualizada, atuarialmente, baseada na taxa de juros de 3% a.a. e, mensalmente, pelo IPCA. Os cálculos atuariais consideram fatores como probabilidade de morte, idade, sexo, indenização e vigência do seguro.</span></li>
+              <li :style="{ display: 'flex', gap: '6px' }"><span>•</span><span>Na ocasião de saldamento, a indenização mínima passa a ser R$ 30.000,00. A indenização máxima é de {{ (() => { const sv = detalhamentoData.planos.find(p => p.seguroVida)?.seguroVida; return sv?.morte?.capitalSegurado || '—'; })() }}.</span></li>
+              <li :style="{ display: 'flex', gap: '6px' }"><span>•</span><span>Atenção: O Seguro Viagem não é Seguro Saúde! Leia atentamente as condições contratuais, observando seus direitos e obrigações, bem como o limite do capital segurado contratado para cada cobertura. As coberturas do Seguro Viagem estão contempladas em um Seguro não contributário garantido pela Chubb Seguros Brasil S.A., CNPJ: 03.502.099/0001-18, e estipulado pelo Clube de Seguros Icatu, CNPJ: 03.859.987/0001-92. Processo SUSEP 15414.900438/2015-90. Ouvidoria Chubb: 0800 722 5059.</span></li>
+              <li :style="{ display: 'flex', gap: '6px' }"><span>•</span><span>O pagamento dos tributos que incidam ou venham a incidir sobre as parcelas, indenizações e resgate deverá ser efetuado conforme a legislação vigente.</span></li>
+              <li :style="{ display: 'flex', gap: '6px' }"><span>•</span><span>A aceitação do seguro estará sujeita à análise de risco.</span></li>
+              <li :style="{ display: 'flex', gap: '6px' }"><span>•</span><span>As informações contidas neste material são resumidas. Para total conhecimento das características deste seguro, consulte sua proposta de contratação, condições gerais e condições especiais.</span></li>
+            </ul>
+          </div>
         </template>
       </div>
     </div>
