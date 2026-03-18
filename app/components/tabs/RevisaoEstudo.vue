@@ -536,6 +536,7 @@ async function handleSalvar() {
                 </div>
               </div>
             </div>
+            </template>
             <!-- Fallback: tabela antiga -->
             <template v-else-if="plano.coberturas.length > 0">
               <div :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', overflow: 'hidden' }">
