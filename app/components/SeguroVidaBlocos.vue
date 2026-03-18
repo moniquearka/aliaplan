@@ -119,39 +119,6 @@ function onCapitalChange(key: keyof SeguroVidaData, value: string) {
   setTimeout(() => recalcCobertura(key), 50)
 }
 
-// Aplica cap de mínimo e máximo ao perder o foco no campo Capital Segurado
-function onCapitalBlur(key: keyof SeguroVidaData) {
-  const sv = props.modelValue
-  const cob = sv[key] as CoberturaSeguro
-  const cs = parseBRL(cob.capitalSegurado)
-  if (cs <= 0) return
-
-  // Define mínimo e máximo por cobertura
-  let minVal = 0
-  let maxVal = Infinity
-
-  if (key === 'morte' || key === 'morteTemp') {
-    minVal = 50_000
-    maxVal = 20_000_000
-  } else if (key === 'iea') {
-    minVal = 50_000
-    maxVal = 10_000_000
-  } else if (key === 'ipa') {
-    minVal = 50_000
-    maxVal = maxCapitalIPA.value
-  } else if (key === 'ied') {
-    minVal = 50_000
-    maxVal = maxCapitalIED.value
-  } else if (key === 'dg') {
-    minVal = 50_000
-    maxVal = maxCapitalDG.value
-  } else if (key === 'dih') {
-    minVal = 100
-    maxVal = maxDIH.value
-  } else if (key === 'dit') {
-    minVal = 1_000
-    maxVal = maxDIT.value
-  }
 
   let capped = cs
   if (maxVal > 0 && cs > maxVal) capped = maxVal
@@ -482,7 +449,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
       </div>
       <div>
         <span :style="labelStyle">Capital Segurado *</span>
-        <input v-if="isEditing" type="text" :value="modelValue.morte.capitalSegurado" @input="(e) => onCapitalChange('morte', (e.target as HTMLInputElement).value)" @blur="() => onCapitalBlur('morte')" placeholder="R$ 0,00" :style="inputStyle" />
+        <input v-if="isEditing" type="text" :value="modelValue.morte.capitalSegurado" @input="(e) => onCapitalChange('morte', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
         <p v-else :style="readonlyVal">{{ modelValue.morte.capitalSegurado || '—' }}</p>
         <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 20.000.000</p>
       </div>
@@ -521,7 +488,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         </div>
         <div>
           <span :style="labelStyle">Capital Segurado *</span>
-          <input v-if="isEditing" type="text" :value="modelValue.morteTemp.capitalSegurado" @input="(e) => onCapitalChange('morteTemp', (e.target as HTMLInputElement).value)" @blur="() => onCapitalBlur('morteTemp')" placeholder="R$ 0,00" :style="inputStyle" />
+          <input v-if="isEditing" type="text" :value="modelValue.morteTemp.capitalSegurado" @input="(e) => onCapitalChange('morteTemp', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.morteTemp.capitalSegurado || '—' }}</p>
           <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 20.000.000</p>
         </div>
@@ -558,7 +525,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         </div>
         <div>
           <span :style="labelStyle">Capital Segurado *</span>
-          <input v-if="isEditing" type="text" :value="modelValue.iea.capitalSegurado" @input="(e) => onCapitalChange('iea', (e.target as HTMLInputElement).value)" @blur="() => onCapitalBlur('iea')" placeholder="R$ 0,00" :style="inputStyle" />
+          <input v-if="isEditing" type="text" :value="modelValue.iea.capitalSegurado" @input="(e) => onCapitalChange('iea', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.iea.capitalSegurado || '—' }}</p>
           <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 10.000.000</p>
         </div>
@@ -598,7 +565,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         </div>
         <div>
           <span :style="labelStyle">Capital Segurado *</span>
-          <input v-if="isEditing" type="text" :value="modelValue.ipa.capitalSegurado" @input="(e) => onCapitalChange('ipa', (e.target as HTMLInputElement).value)" @blur="() => onCapitalBlur('ipa')" placeholder="R$ 0,00" :style="inputStyle" />
+          <input v-if="isEditing" type="text" :value="modelValue.ipa.capitalSegurado" @input="(e) => onCapitalChange('ipa', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.ipa.capitalSegurado || '—' }}</p>
           <p v-if="erroIPA" :style="{ ...erroStyle, whiteSpace: 'pre-line' }">⚠ {{ erroIPA }}</p>
           <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: {{ formatBRL(maxCapitalIPA) }}</p>
@@ -665,7 +632,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         </div>
         <div>
           <span :style="labelStyle">Capital Segurado *</span>
-          <input v-if="isEditing" type="text" :value="modelValue.ied.capitalSegurado" @input="(e) => onCapitalChange('ied', (e.target as HTMLInputElement).value)" @blur="() => onCapitalBlur('ied')" placeholder="R$ 0,00" :style="inputStyle" />
+          <input v-if="isEditing" type="text" :value="modelValue.ied.capitalSegurado" @input="(e) => onCapitalChange('ied', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.ied.capitalSegurado || '—' }}</p>
           <p v-if="erroIED" :style="{ ...erroStyle, whiteSpace: 'pre-line' }">⚠ {{ erroIED }}</p>
           <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: {{ formatBRL(maxCapitalIED) }}</p>
@@ -704,7 +671,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         </div>
         <div>
           <span :style="labelStyle">Capital Segurado *</span>
-          <input v-if="isEditing" type="text" :value="modelValue.dg.capitalSegurado" @input="(e) => onCapitalChange('dg', (e.target as HTMLInputElement).value)" @blur="() => onCapitalBlur('dg')" placeholder="R$ 0,00" :style="inputStyle" />
+          <input v-if="isEditing" type="text" :value="modelValue.dg.capitalSegurado" @input="(e) => onCapitalChange('dg', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.dg.capitalSegurado || '—' }}</p>
           <p v-if="erroDG" :style="{ ...erroStyle, whiteSpace: 'pre-line' }">⚠ {{ erroDG }}</p>
           <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: {{ formatBRL(maxCapitalDG) }}</p>
@@ -743,7 +710,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         </div>
         <div>
           <span :style="labelStyle">Capital Segurado (diária) *</span>
-          <input v-if="isEditing" type="text" :value="modelValue.dih.capitalSegurado" @input="(e) => onCapitalChange('dih', (e.target as HTMLInputElement).value)" @blur="() => onCapitalBlur('dih')" :placeholder="`R$ 100,00 – ${formatBRL(maxDIH)}`" :style="inputStyle" />
+          <input v-if="isEditing" type="text" :value="modelValue.dih.capitalSegurado" @input="(e) => onCapitalChange('dih', (e.target as HTMLInputElement).value)" :placeholder="`R$ 100,00 – ${formatBRL(maxDIH)}`" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.dih.capitalSegurado || '—' }}</p>
           <p v-if="erroDIH" :style="{ ...erroStyle, whiteSpace: 'pre-line' }">⚠ {{ erroDIH }}</p>
           <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 100 | Máx: R$ 1.000</p>
@@ -794,7 +761,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         </div>
         <div>
           <span :style="labelStyle">Capital Segurado (diária) *</span>
-          <input v-if="isEditing" type="text" :value="modelValue.dit.capitalSegurado" @input="(e) => onCapitalChange('dit', (e.target as HTMLInputElement).value)" @blur="() => onCapitalBlur('dit')" :placeholder="`R$ 1.000,00 – ${formatBRL(maxDIT)}`" :style="inputStyle" />
+          <input v-if="isEditing" type="text" :value="modelValue.dit.capitalSegurado" @input="(e) => onCapitalChange('dit', (e.target as HTMLInputElement).value)" :placeholder="`R$ 1.000,00 – ${formatBRL(maxDIT)}`" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.dit.capitalSegurado || '—' }}</p>
           <p v-if="erroDIT" :style="{ ...erroStyle, whiteSpace: 'pre-line' }">⚠ {{ erroDIT }}</p>
           <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 1.000 | Máx: R$ 30.000</p>
