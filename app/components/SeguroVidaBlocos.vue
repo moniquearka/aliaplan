@@ -159,15 +159,15 @@ const maxCapitalDG = computed(() => {
   if (somaMortes.value <= 0) return 1_000_000
   return Math.min(somaMortes.value * 4, 1_000_000)
 })
-// DIH: máx soma/250 OU R$ 1.000 (menor)
+// DIH: Capital Segurado (soma mortes) ÷ 250 OU R$ 1.000 por diária (menor)
 const maxDIH = computed(() => {
   if (somaMortes.value <= 0) return 1_000
   return Math.min(somaMortes.value / 250, 1_000)
 })
-// DIT: máx 10% da soma OU R$ 30.000 (menor)
+// DIT: 10% da soma de Morte OU R$ 30.000.000 (menor)
 const maxDIT = computed(() => {
-  if (somaMortes.value <= 0) return 30_000
-  return Math.min(somaMortes.value * 0.10, 30_000)
+  if (somaMortes.value <= 0) return 30_000_000
+  return Math.min(somaMortes.value * 0.10, 30_000_000)
 })
 
 const erroMorte = computed(() => {
@@ -802,7 +802,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <input v-if="isEditing" type="text" :value="modelValue.dit.capitalSegurado" @input="(e) => onCapitalChange('dit', (e.target as HTMLInputElement).value)" :placeholder="`R$ 1.000,00 – ${formatBRL(maxDIT)}`" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.dit.capitalSegurado || '—' }}</p>
           <p v-if="erroDIT" :style="{ ...erroStyle, whiteSpace: 'pre-line' }">⚠ {{ erroDIT }}</p>
-          <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 1.000 | Máx: R$ 30.000</p>
+          <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 1.000 | Máx: R$ 30.000.000</p>
         </div>
         <div>
           <span :style="labelStyle">Contribuição</span>
