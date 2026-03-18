@@ -371,15 +371,14 @@ async function handleSalvar() {
             <!-- Nova estrutura seguroVida -->
             <template v-if="plano.seguroVida">
               <!-- Produto Recomendado -->
-              <div v-if="plano.produtoRecomendado" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', padding: '10px 16px', marginBottom: '10px', background: 'oklch(97.5% 0.002 260)', display: 'flex', alignItems: 'center', gap: '12px' }">
-                <span :style="{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'oklch(40% 0.05 250)', whiteSpace: 'nowrap' }">Produto Recomendado:</span>
-                <span :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)' }">{{ plano.produtoRecomendado }}</span>
-              </div>
-              <!-- Caixa descrição Horizonte -->
-              <div v-if="plano.produtoRecomendado === 'Horizonte'" :style="{ border: '1px solid oklch(85% 0.01 250)', borderRadius: '8px', padding: '12px 16px', marginBottom: '10px', background: 'oklch(96% 0.005 250)' }">
-                <p :style="{ fontSize: '11px', color: 'oklch(30% 0.05 250)', margin: 0, lineHeight: 1.6 }">
-                  O Horizonte é um Seguro de Vida Individual que oferece coberturas de Morte e Invalidez com a possibilidade de inclusão de coberturas adicionais, garantindo proteção financeira personalizada para o segurado e sua família. Administrado pela Icatu Seguros S.A., CNPJ 42.283.770/0001-39.
-                </p>
+              <div v-if="plano.produtoRecomendado" :style="{ marginBottom: '10px' }">
+                <label :style="{ display: 'block', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'oklch(40% 0.05 250)', marginBottom: '6px' }">Produto Recomendado</label>
+                <div :style="{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '14px 16px', borderRadius: '8px', border: '1px solid oklch(20% 0.05 250)', background: 'rgba(30,64,175,0.04)' }">
+                  <div>
+                    <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">{{ plano.produtoRecomendado }}</p>
+                    <p v-if="plano.produtoRecomendado === 'Horizonte'" :style="{ fontSize: '12px', color: 'oklch(55% 0.02 250)', marginTop: '4px', lineHeight: 1.5 }">O Horizonte é o seguro de vida que oferece a combinação perfeita entre proteção e a possibilidade de formação de reserva, de forma temporária ou durante toda a vida.</p>
+                  </div>
+                </div>
               </div>
               <!-- Preferência do Proponente -->
               <div :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', padding: '12px 16px', marginBottom: '10px', background: 'oklch(97.5% 0.002 260)' }">
@@ -401,47 +400,74 @@ async function handleSalvar() {
                   </thead>
                   <tbody>
                     <tr :style="{ borderBottom: '1px solid oklch(93% 0.003 260)' }">
-                      <td :style="{ padding: '8px 12px', color: 'oklch(25% 0.05 250)', fontWeight: 600, fontSize: '11px' }">Morte Natural ou Acidental + Adiantamento por Doença Terminal</td>
+                      <td :style="{ padding: '8px 12px', color: 'oklch(25% 0.05 250)', fontWeight: 600, fontSize: '11px' }">
+                        <span>Morte Natural ou Acidental + Adiantamento por Doença Terminal</span>
+                        <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: '3px 0 0 0', lineHeight: 1.5, fontStyle: 'italic', fontWeight: 400 }">Seus beneficiários receberão o valor integral da indenização em caso de morte natural ou acidental. Caso seja constatado estado terminal da doença, você poderá optar por receber, antecipadamente, o valor integral da sua indenização por morte da cobertura básica.</p>
+                      </td>
                       <td :style="{ padding: '8px 8px', textAlign: 'center', fontSize: '11px', color: 'oklch(35% 0.05 250)', fontWeight: 500 }">{{ plano.seguroVida.morte.capitalSegurado || '—' }}</td>
                       <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600 }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? plano.seguroVida.morte.contribuicaoAnual : plano.seguroVida.morte.contribuicaoMensal || '—' }}</td>
                     </tr>
                     <tr v-if="plano.seguroVida.morteTemp.ativo" :style="{ borderBottom: '1px solid oklch(93% 0.003 260)' }">
-                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">Morte Natural ou Acidental (Vigência Temporária)</td>
+                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">
+                        <span :style="{ fontWeight: 600 }">Morte Natural ou Acidental (Vigência Temporária)</span>
+                        <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: '3px 0 0 0', lineHeight: 1.5, fontStyle: 'italic' }">Seus beneficiários receberão o valor integral da indenização em caso de morte natural ou acidental.</p>
+                      </td>
                       <td :style="{ padding: '8px 8px', textAlign: 'center', fontSize: '11px', color: 'oklch(35% 0.05 250)', fontWeight: 500 }">{{ plano.seguroVida.morteTemp.capitalSegurado || '—' }}</td>
                       <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600 }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? plano.seguroVida.morteTemp.contribuicaoAnual : plano.seguroVida.morteTemp.contribuicaoMensal || '—' }}</td>
                     </tr>
                     <tr v-if="plano.seguroVida.iea.ativo" :style="{ borderBottom: '1px solid oklch(93% 0.003 260)' }">
-                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">Indenização Especial de Morte por Acidente (IEA)</td>
+                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">
+                        <span :style="{ fontWeight: 600 }">Indenização Especial de Morte por Acidente (IEA)</span>
+                        <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: '3px 0 0 0', lineHeight: 1.5, fontStyle: 'italic' }">Seus beneficiários receberão uma indenização extra em caso de morte exclusivamente acidental.</p>
+                      </td>
                       <td :style="{ padding: '8px 8px', textAlign: 'center', fontSize: '11px', color: 'oklch(35% 0.05 250)', fontWeight: 500 }">{{ plano.seguroVida.iea.capitalSegurado || '—' }}</td>
                       <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600 }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? plano.seguroVida.iea.contribuicaoAnual : plano.seguroVida.iea.contribuicaoMensal || '—' }}</td>
                     </tr>
                     <tr v-if="plano.seguroVida.ipa.ativo" :style="{ borderBottom: '1px solid oklch(93% 0.003 260)' }">
-                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">Invalidez Permanente Total ou Parcial por Acidente (IPA)</td>
+                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">
+                        <span :style="{ fontWeight: 600 }">Invalidez Permanente Total ou Parcial por Acidente (IPA)</span>
+                        <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: '3px 0 0 0', lineHeight: 1.5, fontStyle: 'italic' }">Você poderá receber a indenização total ou um percentual do valor, de acordo com o grau da invalidez.</p>
+                      </td>
                       <td :style="{ padding: '8px 8px', textAlign: 'center', fontSize: '11px', color: 'oklch(35% 0.05 250)', fontWeight: 500 }">{{ plano.seguroVida.ipa.capitalSegurado || '—' }}</td>
                       <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600 }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? plano.seguroVida.ipa.contribuicaoAnual : plano.seguroVida.ipa.contribuicaoMensal || '—' }}</td>
                     </tr>
                     <tr v-if="plano.seguroVida.ied.ativo" :style="{ borderBottom: '1px solid oklch(93% 0.003 260)' }">
-                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">Indenização Especial de Invalidez por Doença (IED)</td>
+                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">
+                        <span :style="{ fontWeight: 600 }">Indenização Especial de Invalidez por Doença (IED)</span>
+                        <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: '3px 0 0 0', lineHeight: 1.5, fontStyle: 'italic' }">Você poderá receber indenização em caso de perda de forma total e permanente, em decorrência por doença, da capacidade de exercer qualquer atividade que lhe garanta subsistência.</p>
+                      </td>
                       <td :style="{ padding: '8px 8px', textAlign: 'center', fontSize: '11px', color: 'oklch(35% 0.05 250)', fontWeight: 500 }">{{ plano.seguroVida.ied.capitalSegurado || '—' }}</td>
                       <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600 }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? plano.seguroVida.ied.contribuicaoAnual : plano.seguroVida.ied.contribuicaoMensal || '—' }}</td>
                     </tr>
                     <tr v-if="plano.seguroVida.dg.ativo" :style="{ borderBottom: '1px solid oklch(93% 0.003 260)' }">
-                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">Doenças Graves (DG)</td>
+                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">
+                        <span :style="{ fontWeight: 600 }">Doenças Graves (DG)</span>
+                        <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: '3px 0 0 0', lineHeight: 1.5, fontStyle: 'italic' }">Você poderá receber indenização em caso de diagnóstico de doenças graves como câncer, infarto, AVC, Alzheimer, Parkinson, ELA, insuficiência renal crônica, entre outras.</p>
+                      </td>
                       <td :style="{ padding: '8px 8px', textAlign: 'center', fontSize: '11px', color: 'oklch(35% 0.05 250)', fontWeight: 500 }">{{ plano.seguroVida.dg.capitalSegurado || '—' }}</td>
                       <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600 }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? plano.seguroVida.dg.contribuicaoAnual : plano.seguroVida.dg.contribuicaoMensal || '—' }}</td>
                     </tr>
                     <tr v-if="plano.seguroVida.dih.ativo" :style="{ borderBottom: '1px solid oklch(93% 0.003 260)' }">
-                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">Diária de Internação Hospitalar (DIH){{ plano.seguroVida.dih.dihUTI === 'Sim' ? ' + UTI' : '' }}</td>
+                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">
+                        <span :style="{ fontWeight: 600 }">Diária de Internação Hospitalar (DIH){{ plano.seguroVida.dih.dihUTI === 'Sim' ? ' + UTI' : '' }}</span>
+                        <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: '3px 0 0 0', lineHeight: 1.5, fontStyle: 'italic' }">Você poderá receber a indenização total ou um percentual do valor por dia de internação hospitalar, a partir do primeiro dia, seja por doença ou acidente.</p>
+                      </td>
                       <td :style="{ padding: '8px 8px', textAlign: 'center', fontSize: '11px', color: 'oklch(35% 0.05 250)', fontWeight: 500 }">{{ plano.seguroVida.dih.capitalSegurado || '—' }}</td>
                       <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600 }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? plano.seguroVida.dih.contribuicaoAnual : plano.seguroVida.dih.contribuicaoMensal || '—' }}</td>
                     </tr>
                     <tr v-if="plano.seguroVida.dit.ativo" :style="{ borderBottom: '1px solid oklch(93% 0.003 260)' }">
-                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">Diária de Incapacidade Temporária (DIT){{ plano.seguroVida.dit.franquiaReduzida === 'Sim' ? ` – Franquia ${plano.seguroVida.dit.quantidadeDias}` : '' }}{{ plano.seguroVida.dit.lerDortLtc === 'Sim' ? ' c/ LER/DORT' : '' }}</td>
+                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">
+                        <span :style="{ fontWeight: 600 }">Diária de Incapacidade Temporária (DIT){{ plano.seguroVida.dit.franquiaReduzida === 'Sim' ? ` – Franquia ${plano.seguroVida.dit.quantidadeDias}` : '' }}{{ plano.seguroVida.dit.lerDortLtc === 'Sim' ? ' c/ LER/DORT' : '' }}</span>
+                        <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: '3px 0 0 0', lineHeight: 1.5, fontStyle: 'italic' }">Você poderá receber a indenização diária caso fique impossibilitado de exercer suas atividades profissionais por mais de 15 dias consecutivos, em decorrência de doença ou acidente.</p>
+                      </td>
                       <td :style="{ padding: '8px 8px', textAlign: 'center', fontSize: '11px', color: 'oklch(35% 0.05 250)', fontWeight: 500 }">{{ plano.seguroVida.dit.capitalSegurado || '—' }}</td>
                       <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600 }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? plano.seguroVida.dit.contribuicaoAnual : plano.seguroVida.dit.contribuicaoMensal || '—' }}</td>
                     </tr>
                     <tr v-if="plano.seguroVida.saf.ativo">
-                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">Serviço de Assistência Funeral (SAF {{ plano.seguroVida.saf.tipoSAF || 'Individual' }})</td>
+                      <td :style="{ padding: '8px 12px', color: 'oklch(30% 0.05 250)', fontSize: '11px' }">
+                        <span :style="{ fontWeight: 600 }">Serviço de Assistência Funeral (SAF {{ plano.seguroVida.saf.tipoSAF || 'Individual' }})</span>
+                        <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: '3px 0 0 0', lineHeight: 1.5, fontStyle: 'italic' }">Nossa empresa parceira irá providenciar e custear todos os serviços que envolvem o funeral. Se acharem melhor, faremos o reembolso das despesas, respeitado o limite de valor da sua escolha: R$ 12.000,00.</p>
+                      </td>
                       <td :style="{ padding: '8px 8px', textAlign: 'center', fontSize: '11px', color: 'oklch(35% 0.05 250)', fontWeight: 500 }">R$ 12.000,00</td>
                       <td :style="{ padding: '8px 12px', textAlign: 'right', fontSize: '11px', color: 'oklch(20% 0.1 145)', fontWeight: 600 }">{{ plano.seguroVida.tipoContribuicao === 'anual' ? plano.seguroVida.saf.contribuicaoAnual : plano.seguroVida.saf.contribuicaoMensal || '—' }}</td>
                     </tr>
@@ -468,74 +494,7 @@ async function handleSalvar() {
                   </tfoot>
                 </table>
               </div>
-            <!-- Descrições das coberturas ativas -->
-            <div :style="{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }">
-              <!-- Morte obrigatória -->
-              <div :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }">
-                <div :style="{ padding: '8px 12px', background: 'oklch(97.5% 0.002 260)', borderBottom: '1px solid oklch(93% 0.003 260)' }">
-                  <p :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: '0 0 3px 0' }">
-                    {{ (plano.seguroVida.vigenciaGlobal || '').toLowerCase().includes('tempor') ? 'Morte Básica' : 'Morte Natural ou Acidental + Adiantamento por Doença Terminal (Obrigatório)' }}
-                  </p>
-                  <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }">Seus beneficiários receberão o valor integral da indenização em caso de morte natural ou acidental. Caso seja constatado estado terminal da doença, você poderá optar por receber, antecipadamente, o valor integral da sua indenização por morte da cobertura básica.</p>
-                </div>
-              </div>
-              <!-- Morte Temporária -->
-              <div v-if="plano.seguroVida.morteTemp.ativo" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }">
-                <div :style="{ padding: '8px 12px', background: 'oklch(97.5% 0.002 260)', borderBottom: '1px solid oklch(93% 0.003 260)' }">
-                  <p :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: '0 0 3px 0' }">Morte Natural ou Acidental (Vigência Temporária)</p>
-                  <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }">Seus beneficiários receberão o valor integral da indenização em caso de morte natural ou acidental.</p>
-                </div>
-              </div>
-              <!-- IEA -->
-              <div v-if="plano.seguroVida.iea.ativo" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }">
-                <div :style="{ padding: '8px 12px', background: 'oklch(97.5% 0.002 260)', borderBottom: '1px solid oklch(93% 0.003 260)' }">
-                  <p :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: '0 0 3px 0' }">Indenização Especial de Morte por Acidente (IEA)</p>
-                  <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }">Seus beneficiários receberão uma indenização extra em caso de morte exclusivamente acidental.</p>
-                </div>
-              </div>
-              <!-- IPA -->
-              <div v-if="plano.seguroVida.ipa.ativo" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }">
-                <div :style="{ padding: '8px 12px', background: 'oklch(97.5% 0.002 260)', borderBottom: '1px solid oklch(93% 0.003 260)' }">
-                  <p :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: '0 0 3px 0' }">Invalidez Permanente Total ou Parcial por Acidente (IPA)</p>
-                  <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }">Você poderá receber a indenização total ou um percentual do valor, de acordo com o grau da invalidez.</p>
-                </div>
-              </div>
-              <!-- IED -->
-              <div v-if="plano.seguroVida.ied.ativo" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }">
-                <div :style="{ padding: '8px 12px', background: 'oklch(97.5% 0.002 260)', borderBottom: '1px solid oklch(93% 0.003 260)' }">
-                  <p :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: '0 0 3px 0' }">Indenização Especial de Invalidez por Doença (IED)</p>
-                  <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }">Você poderá receber indenização em caso de perda de forma total e permanente, em decorrência por doença, da capacidade de exercer qualquer atividade que lhe garanta subsistência.</p>
-                </div>
-              </div>
-              <!-- DG -->
-              <div v-if="plano.seguroVida.dg.ativo" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }">
-                <div :style="{ padding: '8px 12px', background: 'oklch(97.5% 0.002 260)', borderBottom: '1px solid oklch(93% 0.003 260)' }">
-                  <p :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: '0 0 3px 0' }">Diagnóstico de Doenças Graves (DG)</p>
-                  <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }">Você poderá receber indenização em caso de diagnóstico de doenças graves como câncer, infarto, AVC, Alzheimer, Parkinson, ELA, insuficiência renal crônica, entre outras.</p>
-                </div>
-              </div>
-              <!-- DIH -->
-              <div v-if="plano.seguroVida.dih.ativo" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }">
-                <div :style="{ padding: '8px 12px', background: 'oklch(97.5% 0.002 260)', borderBottom: '1px solid oklch(93% 0.003 260)' }">
-                  <p :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: '0 0 3px 0' }">Diária de Internação Hospitalar (DIH){{ plano.seguroVida.dih.dihUTI === 'Sim' ? ' + UTI' : '' }}</p>
-                  <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }">Você poderá receber a indenização total ou um percentual do valor por dia de internação hospitalar, a partir do primeiro dia, seja por doença ou acidente.</p>
-                </div>
-              </div>
-              <!-- DIT -->
-              <div v-if="plano.seguroVida.dit.ativo" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }">
-                <div :style="{ padding: '8px 12px', background: 'oklch(97.5% 0.002 260)', borderBottom: '1px solid oklch(93% 0.003 260)' }">
-                  <p :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: '0 0 3px 0' }">Diária de Incapacidade Temporária (DIT){{ plano.seguroVida.dit.franquiaReduzida === 'Sim' ? ' – Franquia 7 dias' : '' }}{{ plano.seguroVida.dit.lerDortLtc === 'Sim' ? ' c/ LER/DORT' : '' }}</p>
-                  <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }">Você poderá receber a indenização diária caso fique impossibilitado de exercer suas atividades profissionais por mais de 15 dias consecutivos, em decorrência de doença ou acidente.</p>
-                </div>
-              </div>
-              <!-- SAF -->
-              <div v-if="plano.seguroVida.saf.ativo" :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }">
-                <div :style="{ padding: '8px 12px', background: 'oklch(97.5% 0.002 260)', borderBottom: '1px solid oklch(93% 0.003 260)' }">
-                  <p :style="{ fontSize: '11px', fontWeight: 600, color: 'oklch(20% 0.05 250)', margin: '0 0 3px 0' }">Serviço de Assistência Funeral (SAF {{ plano.seguroVida.saf.tipoSAF || 'Individual' }})</p>
-                  <p :style="{ fontSize: '10px', color: 'oklch(50% 0.02 250)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }">Nossa empresa parceira irá providenciar e custear todos os serviços que envolvem o funeral. Se acharem melhor, faremos o reembolso das despesas, respeitado o limite de valor da sua escolha: R$ 12.000,00.</p>
-                </div>
-              </div>
-            </div>
+
             </template>
             <!-- Fallback: tabela antiga -->
             <template v-else-if="plano.coberturas.length > 0">
@@ -632,10 +591,13 @@ async function handleSalvar() {
         <p :style="{ fontSize: '12px', color: 'oklch(45% 0.02 250)', fontStyle: 'italic', margin: '0 0 4px 0', textAlign: 'left' }">
           Estudo com validade de 7 dias úteis a partir da data {{ new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) }}.
         </p>
-        <p :style="{ fontSize: '11px', color: 'oklch(50% 0.02 250)', margin: '0 0 10px 0', textAlign: 'left', lineHeight: 1.5 }">
+        <p :style="{ fontSize: '12px', color: 'oklch(45% 0.02 250)', fontStyle: 'italic', margin: '0 0 10px 0', textAlign: 'left', lineHeight: 1.5 }">
           Esta simulação é um exemplo e não representa garantia dos dados apresentados ou dos resultados obtidos.
         </p>
         <template v-if="resumoData.produtoSelecionado !== 'seguro'">
+          <div :style="{ borderTop: '1px solid oklch(90% 0.005 260)', marginTop: '6px', paddingTop: '10px', marginBottom: '8px' }">
+            <p :style="{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'oklch(40% 0.05 250)', margin: '0 0 8px 0' }">Observações Gerais - Previdência</p>
+          </div>
           <p :style="{ fontSize: '11px', color: 'oklch(50% 0.02 250)', margin: '0 0 6px 0', textAlign: 'left', lineHeight: 1.5 }">
             Os Planos que possuem o termo Qualificado em sua denominação são destinados exclusivamente aos proponentes qualificados que atendem ao critério para investidor qualificado, nos termos da instrução CVM que regulamenta especificamente o assunto. São considerados proponentes qualificados aqueles que possuem investimentos financeiros com valor igual ou maior do que R$1.000.000,00 e atestem por escrito suas condições e/ou foram aprovados em exames de qualificação técnica relacionados ao mercado financeiro e/ou possuem certificação aprovada pela CVM para atuação profissional nesse segmento.
           </p>
