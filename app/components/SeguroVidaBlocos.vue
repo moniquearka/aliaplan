@@ -100,9 +100,21 @@ function recalcCobertura(key: keyof SeguroVidaData) {
   emit('update:modelValue', { ...sv, [key]: newCob })
 }
 
+// Aplica máscara BRL em tempo real ao digitar
+function applyBRLMask(raw: string): string {
+  // Remove tudo que não for dígito
+  const digits = raw.replace(/\D/g, '')
+  if (!digits) return ''
+  // Converte para centavos e formata
+  const cents = parseInt(digits, 10)
+  const reais = cents / 100
+  return reais.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
 // Recalcular todas as coberturas ativas quando Capital Segurado muda
 function onCapitalChange(key: keyof SeguroVidaData, value: string) {
-  updateCobertura(key, 'capitalSegurado', value)
+  const masked = applyBRLMask(value)
+  updateCobertura(key, 'capitalSegurado', masked)
   // Aguarda o próximo tick para recalcular
   setTimeout(() => recalcCobertura(key), 50)
 }
