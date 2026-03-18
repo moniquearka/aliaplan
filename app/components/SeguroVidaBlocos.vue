@@ -16,8 +16,8 @@ const props = defineProps<{
 const emit = defineEmits<{ 'update:modelValue': [val: SeguroVidaData] }>()
 
 // ── Opções ────────────────────────────────────────────────────────────────────
-const VIGENCIA_VITALICIA_TEMP = ['Vitalícia', 'Temporária 5 anos', 'Temporária 10 anos', 'Temporária 15 anos', 'Temporária 20 anos', 'Temporária 25 anos']
-const VIGENCIA_TEMP_ONLY = ['Temporária 5 anos', 'Temporária 10 anos', 'Temporária 15 anos', 'Temporária 20 anos', 'Temporária 25 anos']
+const VIGENCIA_VITALICIA_TEMP = ['Vitalícia', 'Temporária 5 anos', 'Temporária 10 anos', 'Temporária 15 anos', 'Temporária 20 anos', 'Temporária 25 anos', 'Temporária 30 anos']
+const VIGENCIA_TEMP_ONLY = ['Temporária 5 anos', 'Temporária 10 anos', 'Temporária 15 anos', 'Temporária 20 anos', 'Temporária 25 anos', 'Temporária 30 anos']
 const TEMPO_CONTRIB_OPTS = ['Vitalício', '5 anos', '10 anos', '15 anos', '20 anos', '25 anos', '30 anos']
 const TEMPO_CONTRIB_SAF = ['10 anos', '15 anos', '20 anos', '25 anos', '30 anos']
 
@@ -208,6 +208,14 @@ const erroDIT = computed(() => {
   return ''
 })
 
+// Validação cruzada: soma Morte + MorteTemp ≤ R$ 20.000.000
+const erroSomaMortes = computed(() => {
+  const soma = somaMortes.value
+  if (soma > 20_000_000)
+    return `A soma das coberturas de morte não pode exceder R$ 20.000.000,00 (atual: ${formatBRL(soma)})`
+  return ''
+})
+
 // ── Elegibilidade por idade ───────────────────────────────────────────────────
 const elegivelDG = computed(() => isElegivelPorIdade('dg', props.idadeProponente))
 const elegivelDIH = computed(() => isElegivelPorIdade('dih', props.idadeProponente))
@@ -256,7 +264,7 @@ const tempoContribIEA_IPA_IED_SAF = computed(() => {
   const prazo = props.modelValue.prazoPagamentoGlobal || ''
   const ALL = ['5 anos', '10 anos', '15 anos', '20 anos', '25 anos', '30 anos', 'Vitalício']
   if (isTemporaria.value) {
-    // Temporária X anos: opções <= X
+    // Temporária X anos: opções <= X (sem Vitalício)
     const maxAnos = extrairAnos(vig)
     return ALL.filter(o => {
       if (o === 'Vitalício') return false
@@ -264,10 +272,10 @@ const tempoContribIEA_IPA_IED_SAF = computed(() => {
       return a > 0 && a <= maxAnos
     })
   }
-  // Vitalícia
+  // Vitalícia + 5 anos: IEA/IPA/IED/SAF têm TODAS as opções
   const prazoAnos = extrairAnos(prazo)
-  if (prazoAnos === 5) return ['5 anos']
-  // prazo >= 10: excluir '5 anos', manter >= prazo
+  if (prazoAnos === 5) return ALL
+  // Vitalícia + prazo >= 10: excluir '5 anos', manter >= prazo
   return ALL.filter(o => {
     if (o === '5 anos') return false
     if (o === 'Vitalício') return true
@@ -480,7 +488,8 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <span :style="labelStyle">Capital Segurado *</span>
           <input v-if="isEditing" type="text" :value="modelValue.morteTemp.capitalSegurado" @input="(e) => onCapitalChange('morteTemp', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.morteTemp.capitalSegurado || '—' }}</p>
-          <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 20.000.000</p>
+          <p v-if="erroSomaMortes" :style="{ ...erroStyle, whiteSpace: 'pre-line' }">⚠ {{ erroSomaMortes }}</p>
+          <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 20.000.000</p>
         </div>
         <div>
           <span :style="labelStyle">Contribuição</span>
@@ -511,7 +520,10 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         </div>
         <div>
           <span :style="labelStyle">Tempo de Contribuição</span>
-          <p :style="readonlyVal">{{ modelValue.prazoPagamentoGlobal || '—' }}</p>
+          <select v-if="isEditing" :value="modelValue.iea.prazoPagamento" @change="(e) => updateCobertura('iea', 'prazoPagamento', (e.target as HTMLSelectElement).value)" :style="selectStyle">
+            <option v-for="p in tempoContribIEA_IPA_IED_SAF" :key="p" :value="p">{{ p }}</option>
+          </select>
+          <p v-else :style="readonlyVal">{{ modelValue.iea.prazoPagamento || modelValue.prazoPagamentoGlobal || '—' }}</p>
         </div>
         <div>
           <span :style="labelStyle">Capital Segurado *</span>
