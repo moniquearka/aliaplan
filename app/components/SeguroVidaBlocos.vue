@@ -170,10 +170,36 @@ const maxDIT = computed(() => {
   return Math.min(somaMortes.value * 0.10, 30_000)
 })
 
+const erroMorte = computed(() => {
+  if (!props.modelValue.morte.ativo) return ''
+  const cs = parseBRL(props.modelValue.morte.capitalSegurado)
+  if (cs <= 0) return ''
+  if (cs < 50_000) return 'Capital Segurado mínimo é R$ 50.000,00'
+  if (cs > 20_000_000) return `Capital Segurado máximo é R$ 20.000.000,00`
+  return ''
+})
+const erroMorteTemp = computed(() => {
+  if (!props.modelValue.morteTemp.ativo) return ''
+  const cs = parseBRL(props.modelValue.morteTemp.capitalSegurado)
+  if (cs <= 0) return ''
+  if (cs < 50_000) return 'Capital Segurado mínimo é R$ 50.000,00'
+  if (cs > 20_000_000) return `Capital Segurado máximo é R$ 20.000.000,00`
+  return ''
+})
+const erroIEA = computed(() => {
+  if (!props.modelValue.iea.ativo) return ''
+  const cs = parseBRL(props.modelValue.iea.capitalSegurado)
+  if (cs <= 0) return ''
+  if (cs < 50_000) return 'Capital Segurado mínimo é R$ 50.000,00'
+  if (cs > 10_000_000) return 'Capital Segurado máximo é R$ 10.000.000,00'
+  return ''
+})
 const erroIPA = computed(() => {
   if (!props.modelValue.ipa.ativo) return ''
   const cs = parseBRL(props.modelValue.ipa.capitalSegurado)
-  if (cs > maxCapitalIPA.value && maxCapitalIPA.value > 0) {
+  if (cs <= 0) return ''
+  if (cs < 50_000) return 'Capital Segurado mínimo é R$ 50.000,00'
+  if (cs > maxCapitalIPA.value) {
     const pct = props.modelValue.ipa.retirarVinculo === 'Sim' ? '' : '\nLimitado a 500% de uma ou mais coberturas de mortes contratadas.'
     return `Capital IPA não pode exceder ${formatBRL(maxCapitalIPA.value)}${pct}`
   }
@@ -182,29 +208,37 @@ const erroIPA = computed(() => {
 const erroIED = computed(() => {
   if (!props.modelValue.ied.ativo) return ''
   const cs = parseBRL(props.modelValue.ied.capitalSegurado)
-  if (cs > maxCapitalIED.value && maxCapitalIED.value > 0)
+  if (cs <= 0) return ''
+  if (cs < 50_000) return 'Capital Segurado mínimo é R$ 50.000,00'
+  if (cs > maxCapitalIED.value)
     return `Capital IED não pode exceder ${formatBRL(maxCapitalIED.value)}\nLimitado a 200% de uma ou mais coberturas de mortes contratadas.`
   return ''
 })
 const erroDG = computed(() => {
   if (!props.modelValue.dg.ativo) return ''
   const cs = parseBRL(props.modelValue.dg.capitalSegurado)
-  if (cs > maxCapitalDG.value && maxCapitalDG.value > 0)
+  if (cs <= 0) return ''
+  if (cs < 50_000) return 'Capital Segurado mínimo é R$ 50.000,00'
+  if (cs > maxCapitalDG.value)
     return `Capital DG não pode exceder ${formatBRL(maxCapitalDG.value)}\nLimitado a 400% de uma ou mais coberturas de mortes contratadas.`
   return ''
 })
 const erroDIH = computed(() => {
   if (!props.modelValue.dih.ativo) return ''
   const cs = parseBRL(props.modelValue.dih.capitalSegurado)
-  if (cs > maxDIH.value && maxDIH.value > 0)
-    return `Capital DIH não pode exceder ${formatBRL(maxDIH.value)}\nO valor da diária ao ser multiplicado por 250 não pode ultrapassar de uma ou mais coberturas de mortes contratadas.`
+  if (cs <= 0) return ''
+  if (cs < 100) return 'Diária mínima é R$ 100,00'
+  if (cs > maxDIH.value)
+    return `Diária DIH não pode exceder ${formatBRL(maxDIH.value)}\nO valor da diária ao ser multiplicado por 250 não pode ultrapassar o valor de uma ou mais coberturas de mortes contratadas.`
   return ''
 })
 const erroDIT = computed(() => {
   if (!props.modelValue.dit.ativo) return ''
   const cs = parseBRL(props.modelValue.dit.capitalSegurado)
-  if (cs > maxDIT.value && maxDIT.value > 0)
-    return `Capital DIT não pode exceder ${formatBRL(maxDIT.value)}\nLimitado a 10% de uma ou mais coberturas de mortes contratadas.`
+  if (cs <= 0) return ''
+  if (cs < 1_000) return 'Diária mínima é R$ 1.000,00'
+  if (cs > maxDIT.value)
+    return `Diária DIT não pode exceder ${formatBRL(maxDIT.value)}\nLimitado a 10% de uma ou mais coberturas de mortes contratadas.`
   return ''
 })
 
@@ -449,7 +483,8 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         <span :style="labelStyle">Capital Segurado *</span>
         <input v-if="isEditing" type="text" :value="modelValue.morte.capitalSegurado" @input="(e) => onCapitalChange('morte', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
         <p v-else :style="readonlyVal">{{ modelValue.morte.capitalSegurado || '—' }}</p>
-        <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 20.000.000</p>
+        <p v-if="erroMorte || erroSomaMortes" :style="{ ...erroStyle, whiteSpace: 'pre-line' }">⚠ {{ erroMorte || erroSomaMortes }}</p>
+        <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 20.000.000</p>
       </div>
       <div>
         <span :style="labelStyle">Contribuição</span>
@@ -488,7 +523,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <span :style="labelStyle">Capital Segurado *</span>
           <input v-if="isEditing" type="text" :value="modelValue.morteTemp.capitalSegurado" @input="(e) => onCapitalChange('morteTemp', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.morteTemp.capitalSegurado || '—' }}</p>
-          <p v-if="erroSomaMortes" :style="{ ...erroStyle, whiteSpace: 'pre-line' }">⚠ {{ erroSomaMortes }}</p>
+          <p v-if="erroMorteTemp || erroSomaMortes" :style="{ ...erroStyle, whiteSpace: 'pre-line' }">⚠ {{ erroMorteTemp || erroSomaMortes }}</p>
           <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 20.000.000</p>
         </div>
         <div>
@@ -529,7 +564,8 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <span :style="labelStyle">Capital Segurado *</span>
           <input v-if="isEditing" type="text" :value="modelValue.iea.capitalSegurado" @input="(e) => onCapitalChange('iea', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.iea.capitalSegurado || '—' }}</p>
-          <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 10.000.000</p>
+          <p v-if="erroIEA" :style="{ ...erroStyle, whiteSpace: 'pre-line' }">⚠ {{ erroIEA }}</p>
+          <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 10.000.000</p>
         </div>
         <div>
           <span :style="labelStyle">Contribuição</span>
