@@ -424,7 +424,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         <span v-else>Morte Natural ou Acidental + Adiantamento por Doença Terminal <span :style="{ fontSize: '11px', color: 'oklch(50% 0.15 30)', fontWeight: 600 }">(Obrigatório)</span></span>
       </p>
       <!-- Tooltip icon -->
-      <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'morte')" @mouseleave="hideTooltip">
+      <div :style="{ cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0, marginLeft: '4px' }" @mouseenter="(e) => showTooltip(e, 'morte')" @mouseleave="hideTooltip">
         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
       </div>
     </div>
@@ -459,7 +459,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         <svg v-if="modelValue.morteTemp.ativo" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Morte Natural ou Acidental (Vigência Temporária)</p>
-      <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'morteTemp')" @mouseleave="hideTooltip">
+      <div :style="{ cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0, marginLeft: '4px' }" @mouseenter="(e) => showTooltip(e, 'morteTemp')" @mouseleave="hideTooltip">
         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
       </div>
     </div>
@@ -499,7 +499,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         <svg v-if="modelValue.iea.ativo" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Indenização Especial de Morte por Acidente (IEA)</p>
-      <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'iea')" @mouseleave="hideTooltip">
+      <div :style="{ cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0, marginLeft: '4px' }" @mouseenter="(e) => showTooltip(e, 'iea')" @mouseleave="hideTooltip">
         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
       </div>
     </div>
@@ -536,7 +536,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         <svg v-if="modelValue.ipa.ativo" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Invalidez Permanente Parcial ou Total por Acidente (IPA)</p>
-      <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'ipa')" @mouseleave="hideTooltip">
+      <div :style="{ cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0, marginLeft: '4px' }" @mouseenter="(e) => showTooltip(e, 'ipa')" @mouseleave="hideTooltip">
         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
       </div>
     </div>
@@ -603,7 +603,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         <svg v-if="modelValue.ied.ativo" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Indenização Especial de Invalidez por Doença (IED)</p>
-      <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'ied')" @mouseleave="hideTooltip">
+      <div :style="{ cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0, marginLeft: '4px' }" @mouseenter="(e) => showTooltip(e, 'ied')" @mouseleave="hideTooltip">
         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
       </div>
     </div>
@@ -645,7 +645,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Diagnóstico de Doenças Graves (DG)</p>
 
-      <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'dg')" @mouseleave="hideTooltip">
+      <div :style="{ cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0, marginLeft: '4px' }" @mouseenter="(e) => showTooltip(e, 'dg')" @mouseleave="hideTooltip">
         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
       </div>
     </div>
@@ -684,7 +684,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Diária de Internação Hospitalar (DIH)</p>
 
-      <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'dih')" @mouseleave="hideTooltip">
+      <div :style="{ cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0, marginLeft: '4px' }" @mouseenter="(e) => showTooltip(e, 'dih')" @mouseleave="hideTooltip">
         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
       </div>
     </div>
@@ -735,7 +735,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Diária de Incapacidade Temporária (DIT)</p>
 
-      <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'dit')" @mouseleave="hideTooltip">
+      <div :style="{ cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0, marginLeft: '4px' }" @mouseenter="(e) => showTooltip(e, 'dit')" @mouseleave="hideTooltip">
         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
       </div>
     </div>
@@ -811,7 +811,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         <svg v-if="modelValue.saf.ativo" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
       </div>
       <p :style="{ fontSize: '13px', fontWeight: 700, color: 'oklch(20% 0.05 250)', margin: 0 }">Serviço de Assistência Funeral (SAF)</p>
-      <div :style="{ marginLeft: 'auto', cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0 }" @mouseenter="(e) => showTooltip(e, 'saf')" @mouseleave="hideTooltip">
+      <div :style="{ cursor: 'pointer', color: 'oklch(55% 0.02 250)', flexShrink: 0, marginLeft: '4px' }" @mouseenter="(e) => showTooltip(e, 'saf')" @mouseleave="hideTooltip">
         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v1m0 3v4"/></svg>
       </div>
     </div>
@@ -855,7 +855,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
 
   <!-- ── Tooltip Overlay ── -->
   <teleport to="body">
-    <div v-if="tooltipVisible" :style="{ position: 'fixed', left: tooltipX + 'px', top: tooltipY + 'px', transform: 'translateX(-50%) translateY(-100%)', background: 'oklch(15% 0.05 250)', color: '#fff', fontSize: '12px', lineHeight: '1.5', padding: '10px 14px', borderRadius: '8px', maxWidth: '320px', zIndex: 9999, pointerEvents: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.25)' }">
+    <div v-if="tooltipVisible" :style="{ position: 'fixed', left: tooltipX + 'px', top: tooltipY + 'px', transform: 'translateX(-50%) translateY(-100%)', background: 'oklch(15% 0.05 250)', color: '#fff', fontSize: '12px', lineHeight: '1.5', padding: '10px 14px', borderRadius: '8px', maxWidth: '440px', zIndex: 9999, pointerEvents: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.25)' }">
       {{ tooltipText }}
       <div :style="{ position: 'absolute', bottom: '-6px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid oklch(15% 0.05 250)' }"></div>
     </div>
