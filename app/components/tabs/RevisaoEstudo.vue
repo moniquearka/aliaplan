@@ -390,7 +390,12 @@ async function handleSalvar() {
               </div>
               <!-- Tabela de coberturas ativas -->
               <div :style="{ border: '1px solid oklch(90% 0.005 260)', borderRadius: '8px', overflow: 'hidden', marginBottom: '10px' }">
-                <table :style="{ width: '100%', fontSize: '11px', borderCollapse: 'collapse' }">
+                <table :style="{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', tableLayout: 'fixed' }">
+                  <colgroup>
+                    <col style="width: 55%" />
+                    <col style="width: 22%" />
+                    <col style="width: 23%" />
+                  </colgroup>
                   <thead>
                     <tr :style="{ background: 'oklch(95% 0.005 260)', borderBottom: '1px solid oklch(90% 0.005 260)' }">
                       <th :style="{ textAlign: 'left', padding: '7px 12px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'oklch(45% 0.02 250)' }">Cobertura</th>

@@ -50,6 +50,15 @@ function recalcCobertura(key: keyof SeguroVidaData) {
   const sv = props.modelValue
   const cob = sv[key] as CoberturaSeguro
   if (!cob.ativo) return
+  // SAF tem capital fixo de R$ 12.000 — não depende de capitalSegurado
+  if (key === 'saf') {
+    const idade = props.idadeProponente
+    const genero = props.generoProponente
+    const mensal = calcContribuicaoMensal('saf', 12000, idade, genero, { tipoSAF: cob.tipoSAF as any })
+    const anual = calcContribuicaoAnual(mensal)
+    emit('update:modelValue', { ...sv, saf: { ...cob, contribuicaoMensal: mensal > 0 ? formatBRL(mensal) : '', contribuicaoAnual: anual > 0 ? formatBRL(anual) : '' } })
+    return
+  }
   const cs = parseBRL(cob.capitalSegurado)
   if (cs <= 0) return
 
@@ -128,13 +137,23 @@ function onOpcaoChange(key: keyof SeguroVidaData, field: keyof CoberturaSeguro, 
 // Recalcular todas as coberturas ativas quando idade/gênero muda
 watch(() => [props.idadeProponente, props.generoProponente], () => {
   const sv = props.modelValue
-  const cobKeys: (keyof SeguroVidaData)[] = ['morte', 'morteTemp', 'iea', 'ipa', 'ied', 'dg', 'dih', 'dit', 'saf']
+  const cobKeys: (keyof SeguroVidaData)[] = ['morte', 'morteTemp', 'iea', 'ipa', 'ied', 'dg', 'dih', 'dit']
   for (const k of cobKeys) {
     const cob = sv[k] as CoberturaSeguro
     if (cob?.ativo && parseBRL(cob.capitalSegurado) > 0) {
       setTimeout(() => recalcCobertura(k), 50)
     }
   }
+  // SAF usa capital fixo — recalcular se ativo
+  if (sv.saf?.ativo) setTimeout(() => recalcCobertura('saf'), 50)
+})
+
+// Recalcular SAF quando ativado ou quando tipo muda
+watch(() => props.modelValue.saf.ativo, (ativo) => {
+  if (ativo) setTimeout(() => recalcCobertura('saf'), 50)
+})
+watch(() => props.modelValue.saf.tipoSAF, () => {
+  if (props.modelValue.saf.ativo) setTimeout(() => recalcCobertura('saf'), 50)
 })
 
 // ── Validações de Capital Segurado ────────────────────────────────────────────
