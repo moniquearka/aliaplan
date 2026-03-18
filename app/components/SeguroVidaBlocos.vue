@@ -119,16 +119,6 @@ function onCapitalChange(key: keyof SeguroVidaData, value: string) {
   setTimeout(() => recalcCobertura(key), 50)
 }
 
-
-  let capped = cs
-  if (maxVal > 0 && cs > maxVal) capped = maxVal
-  if (minVal > 0 && cs < minVal) capped = minVal
-
-  if (capped !== cs) {
-    updateCobertura(key, 'capitalSegurado', formatBRL(capped))
-    setTimeout(() => recalcCobertura(key), 50)
-  }
-}
 // Recalcular quando opções mudam (majorada, dihUTI, etc.)
 function onOpcaoChange(key: keyof SeguroVidaData, field: keyof CoberturaSeguro, value: any) {
   updateCobertura(key, field, value)
