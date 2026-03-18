@@ -66,8 +66,7 @@
             <option value="">Selecione...</option>
             <option value="Feminino">Feminino</option>
             <option value="Masculino">Masculino</option>
-            <option value="Não-binário">Não-binário</option>
-            <option value="Prefiro não informar">Prefiro não informar</option>
+
           </select>
           <p v-else class="field-value">{{ proponente.genero || '—' }}</p>
         </div>
@@ -212,14 +211,19 @@
                 <span style="font-size:12px;color:oklch(45% 0.02 250);white-space:nowrap">Solução Recomendada:</span>
                 <select v-if="isEditing" v-model="draft.vulnerabilidades[i].solucao" style="font-size:12px;color:#1e40af;font-weight:500;border:1px solid oklch(80% 0.005 260);border-radius:4px;padding:3px 6px;background:#fff;max-width:320px;cursor:pointer">
                   <option value="">Selecione...</option>
+                  <option>Proteção de Vida Vitalício</option>
                   <option>Proteção de Vida Vitalício + Proteção de Vida Adicional Temporária</option>
+                  <option>Proteção de Indenização Especial por Acidente</option>
+                  <option>Proteção de Invalidez Permanente por Acidente</option>
                   <option>Proteção de Invalidez Permanente por Acidente Majorada</option>
+                  <option>Proteção de Indenização Especial de Invalidez por Doença</option>
                   <option>Proteção para Diagnóstico de Doenças Graves</option>
+                  <option>Proteção Diária por Internação Hospitalar</option>
+                  <option>Proteção Diária por Incapacidade Temporária</option>
+                  <option>Proteção de Assistência Funeral</option>
+                  <option>Proteção de Assistência Domiciliar</option>
+                  <option>Proteção em Viagens</option>
                   <option>Aporte em Previdência Privada</option>
-                  <option>Seguro de Vida Vitalício</option>
-                  <option>Seguro de Invalidez + DIT</option>
-                  <option>Cobertura para Doenças Graves</option>
-                  <option>Seguro para Custeio de Inventário</option>
                 </select>
                 <span v-else style="font-size:12px;color:#1e40af;font-weight:500"><strong>{{ vuln.solucao }}</strong></span>
               </div>

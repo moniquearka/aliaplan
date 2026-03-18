@@ -110,11 +110,12 @@ function redistributePercentuais(fundos: FundoSelecionado[], contribuicaoMensal:
 
 // ── Computed: idade e gênero do proponente ────────────────────────────────────
 const idadeProponente = computed(() => {
-  const dn = store.resumoData?.proponente?.dataNascimento
+  const dn = store.detalhamentoData.proponente?.dataNascimento
   if (!dn) return 0
-  const parts = dn.split('/')
+  // dataNascimento is stored as YYYY-MM-DD (from input type="date")
+  const parts = dn.includes('-') ? dn.split('-') : dn.split('/').reverse()
   if (parts.length !== 3) return 0
-  const birth = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]))
+  const birth = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
   const today = new Date()
   let age = today.getFullYear() - birth.getFullYear()
   const m = today.getMonth() - birth.getMonth()
@@ -122,7 +123,7 @@ const idadeProponente = computed(() => {
   return age
 })
 const generoProponente = computed<'Feminino' | 'Masculino'>(() => {
-  const g = store.resumoData?.proponente?.genero || 'Feminino'
+  const g = store.detalhamentoData.proponente?.genero || 'Feminino'
   return g === 'Masculino' ? 'Masculino' : 'Feminino'
 })
 
@@ -152,9 +153,9 @@ function handleCancel() {
   emit('editing-change', false)
 }
 function handleSave() {
-  const proponente = store.resumoData?.proponente
+  const proponente = store.detalhamentoData.proponente
   const idadeAtual = proponente?.dataNascimento
-    ? Math.floor((Date.now() - new Date(proponente.dataNascimento.split('/').reverse().join('-')).getTime()) / (365.25 * 24 * 3600 * 1000))
+    ? Math.floor((Date.now() - new Date(proponente.dataNascimento.includes('-') ? proponente.dataNascimento : proponente.dataNascimento.split('/').reverse().join('-')).getTime()) / (365.25 * 24 * 3600 * 1000))
     : null
 
   for (const plano of draft.value.planos) {

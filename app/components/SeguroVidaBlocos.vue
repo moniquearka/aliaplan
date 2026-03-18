@@ -126,24 +126,73 @@ watch(() => [props.idadeProponente, props.generoProponente], () => {
 })
 
 // ── Validações de Capital Segurado ────────────────────────────────────────────
+// Soma de morte + morteTemp (quando morteTemp disponível)
 const capitalMorteNum = computed(() => parseBRL(props.modelValue.morte.capitalSegurado))
-const maxCapitalIPA = computed(() => capitalMorteNum.value)
-const maxCapitalDG = computed(() => capitalMorteNum.value * 0.10)
-const maxDIH = computed(() => Math.min(capitalMorteNum.value / 250, 1000))
-const maxDIT = computed(() => Math.min(capitalMorteNum.value * 0.10, 30000))
+const capitalMorteTempNum = computed(() => mostrarMorteTemp.value ? parseBRL(props.modelValue.morteTemp.capitalSegurado) : 0)
+const somaMortes = computed(() => capitalMorteNum.value + capitalMorteTempNum.value)
+
+// IPA: máx 500% da soma de mortes OU R$ 10.000.000 (menor), mas só quando retirarVinculo = 'Não'
+const maxCapitalIPA = computed(() => {
+  if (props.modelValue.ipa.retirarVinculo === 'Sim') return 10_000_000
+  if (somaMortes.value <= 0) return 10_000_000
+  return Math.min(somaMortes.value * 5, 10_000_000)
+})
+// IED: máx 200% da soma de mortes OU R$ 1.000.000 (menor)
+const maxCapitalIED = computed(() => {
+  if (somaMortes.value <= 0) return 1_000_000
+  return Math.min(somaMortes.value * 2, 1_000_000)
+})
+// DG: máx 400% da soma de mortes OU R$ 1.000.000 (menor)
+const maxCapitalDG = computed(() => {
+  if (somaMortes.value <= 0) return 1_000_000
+  return Math.min(somaMortes.value * 4, 1_000_000)
+})
+// DIH: máx soma/250 OU R$ 1.000 (menor)
+const maxDIH = computed(() => {
+  if (somaMortes.value <= 0) return 1_000
+  return Math.min(somaMortes.value / 250, 1_000)
+})
+// DIT: máx 10% da soma OU R$ 30.000 (menor)
+const maxDIT = computed(() => {
+  if (somaMortes.value <= 0) return 30_000
+  return Math.min(somaMortes.value * 0.10, 30_000)
+})
 
 const erroIPA = computed(() => {
   if (!props.modelValue.ipa.ativo) return ''
   const cs = parseBRL(props.modelValue.ipa.capitalSegurado)
-  if (cs > maxCapitalIPA.value && maxCapitalIPA.value > 0)
-    return `Capital IPA não pode exceder o Capital de Morte (${formatBRL(maxCapitalIPA.value)})`
+  if (cs > maxCapitalIPA.value && maxCapitalIPA.value > 0) {
+    const pct = props.modelValue.ipa.retirarVinculo === 'Sim' ? '' : '\nLimitado a 500% de uma ou mais coberturas de mortes contratadas.'
+    return `Capital IPA não pode exceder ${formatBRL(maxCapitalIPA.value)}${pct}`
+  }
+  return ''
+})
+const erroIED = computed(() => {
+  if (!props.modelValue.ied.ativo) return ''
+  const cs = parseBRL(props.modelValue.ied.capitalSegurado)
+  if (cs > maxCapitalIED.value && maxCapitalIED.value > 0)
+    return `Capital IED não pode exceder ${formatBRL(maxCapitalIED.value)}\nLimitado a 200% de uma ou mais coberturas de mortes contratadas.`
   return ''
 })
 const erroDG = computed(() => {
   if (!props.modelValue.dg.ativo) return ''
   const cs = parseBRL(props.modelValue.dg.capitalSegurado)
   if (cs > maxCapitalDG.value && maxCapitalDG.value > 0)
-    return `Capital DG não pode exceder 10% do Capital de Morte (${formatBRL(maxCapitalDG.value)})`
+    return `Capital DG não pode exceder ${formatBRL(maxCapitalDG.value)}\nLimitado a 400% de uma ou mais coberturas de mortes contratadas.`
+  return ''
+})
+const erroDIH = computed(() => {
+  if (!props.modelValue.dih.ativo) return ''
+  const cs = parseBRL(props.modelValue.dih.capitalSegurado)
+  if (cs > maxDIH.value && maxDIH.value > 0)
+    return `Capital DIH não pode exceder ${formatBRL(maxDIH.value)}\nO valor da diária ao ser multiplicado por 250 não pode ultrapassar de uma ou mais coberturas de mortes contratadas.`
+  return ''
+})
+const erroDIT = computed(() => {
+  if (!props.modelValue.dit.ativo) return ''
+  const cs = parseBRL(props.modelValue.dit.capitalSegurado)
+  if (cs > maxDIT.value && maxDIT.value > 0)
+    return `Capital DIT não pode exceder ${formatBRL(maxDIT.value)}\nLimitado a 10% de uma ou mais coberturas de mortes contratadas.`
   return ''
 })
 
@@ -168,7 +217,7 @@ function onMorteTempVigenciaChange(novaVigencia: string) {
   emit('update:modelValue', { ...props.modelValue, morteTemp: { ...props.modelValue.morteTemp, vigencia: novaVigencia, prazoPagamento: novoPrazo } })
 }
 
-// ── Visibilidade condicional dos blocos de Morte ──────────────────────────────
+// ── Visibilidade condicional dos blocos de Morte ────────────────────────────────────────────
 // Quando Vigência contém 'Temporária': bloco 1 vira 'Morte Básica', bloco 2 some
 // Quando Vigência = 'Vitalícia' e Prazo = '5 anos': bloco 2 some
 const isTemporaria = computed(() => (props.modelValue.vigenciaGlobal || '').toLowerCase().includes('temporária') || (props.modelValue.vigenciaGlobal || '').toLowerCase().includes('temporaria'))
@@ -177,6 +226,89 @@ const mostrarMorteTemp = computed(() => {
   const prazo = props.modelValue.prazoPagamentoGlobal || ''
   if (prazo === '5 anos') return false
   return true
+})
+
+// ── Cascata de opções de Tempo de Contribuição por cobertura ────────────────────────────────────────────
+// Extrai número de anos de uma string como '10 anos' ou 'Temporária 10 anos'
+function extrairAnos(s: string): number {
+  const m = s.match(/(\d+)\s*anos/i)
+  return m ? parseInt(m[1]) : 0
+}
+
+// Opções de Tempo de Contribuição para coberturas IEA, IPA, IED, SAF
+// Regra: quando Vigência = Vitalícia + Prazo = 5 anos: só '5 anos'
+// Quando Vigência = Vitalícia + Prazo >= 10 anos: opções >= prazo global (exceto '5 anos')
+// Quando Vigência = Temporária X: opções <= X anos
+const tempoContribIEA_IPA_IED_SAF = computed(() => {
+  const vig = props.modelValue.vigenciaGlobal || ''
+  const prazo = props.modelValue.prazoPagamentoGlobal || ''
+  const ALL = ['5 anos', '10 anos', '15 anos', '20 anos', '25 anos', '30 anos', 'Vitalício']
+  if (isTemporaria.value) {
+    // Temporária X anos: opções <= X
+    const maxAnos = extrairAnos(vig)
+    return ALL.filter(o => {
+      if (o === 'Vitalício') return false
+      const a = extrairAnos(o)
+      return a > 0 && a <= maxAnos
+    })
+  }
+  // Vitalícia
+  const prazoAnos = extrairAnos(prazo)
+  if (prazoAnos === 5) return ['5 anos']
+  // prazo >= 10: excluir '5 anos', manter >= prazo
+  return ALL.filter(o => {
+    if (o === '5 anos') return false
+    if (o === 'Vitalício') return true
+    const a = extrairAnos(o)
+    return a >= prazoAnos
+  })
+})
+
+// Opções de Vigencia para MorteTemp: sempre Temporária, de 10 a 30 anos
+const vigMorteTempOpts = computed(() => {
+  return ['Temporária 10 anos', 'Temporária 15 anos', 'Temporária 20 anos', 'Temporária 25 anos', 'Temporária 30 anos']
+})
+
+// Opções de Tempo de Contribuição para Morte Básica (quando Temporária)
+const tempoContribMorteBasica = computed(() => {
+  const vig = props.modelValue.vigenciaGlobal || ''
+  const maxAnos = extrairAnos(vig)
+  const ALL = ['5 anos', '10 anos', '15 anos', '20 anos', '25 anos', '30 anos']
+  if (maxAnos <= 0) return ALL
+  return ALL.filter(o => {
+    const a = extrairAnos(o)
+    return a > 0 && a <= maxAnos
+  })
+})
+
+// Opções de Tempo de Contribuição para o bloco Preferência do Proponente
+// Quando Temporária X: só opções <= X; Quando Vitalícia: todas
+const tempoContribGlobalOpts = computed(() => {
+  const vig = props.modelValue.vigenciaGlobal || ''
+  const ALL = ['5 anos', '10 anos', '15 anos', '20 anos', '25 anos', '30 anos', 'Vitalício']
+  if (isTemporaria.value) {
+    const maxAnos = extrairAnos(vig)
+    return ALL.filter(o => {
+      if (o === 'Vitalício') return false
+      const a = extrairAnos(o)
+      return a > 0 && a <= maxAnos
+    })
+  }
+  return ALL
+})
+
+// Opções de Tempo de Contribuição para Morte Global (Vitalícia)
+const tempoContribMorteGlobal = computed(() => {
+  const prazo = props.modelValue.prazoPagamentoGlobal || ''
+  const prazoAnos = extrairAnos(prazo)
+  if (prazoAnos === 5) return ['5 anos']
+  const ALL = ['5 anos', '10 anos', '15 anos', '20 anos', '25 anos', '30 anos', 'Vitalício']
+  return ALL.filter(o => {
+    if (o === '5 anos') return false
+    if (o === 'Vitalício') return true
+    const a = extrairAnos(o)
+    return a >= prazoAnos
+  })
 })
 
 // ── Tooltip state ─────────────────────────────────────────────────────────────
@@ -258,7 +390,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
       <div>
         <span :style="labelStyle">Tempo de Contribuição *</span>
         <select v-if="isEditing" :value="modelValue.prazoPagamentoGlobal" @change="(e) => updateField('prazoPagamentoGlobal', (e.target as HTMLSelectElement).value)" :style="selectStyle">
-          <option v-for="p in TEMPO_CONTRIB_OPTS" :key="p" :value="p">{{ p }}</option>
+          <option v-for="p in tempoContribGlobalOpts" :key="p" :value="p">{{ p }}</option>
         </select>
         <p v-else :style="readonlyVal">{{ modelValue.prazoPagamentoGlobal || '—' }}</p>
       </div>
@@ -324,16 +456,13 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         <div>
           <span :style="labelStyle">Vigência</span>
           <select v-if="isEditing" :value="modelValue.morteTemp.vigencia" @change="(e) => onMorteTempVigenciaChange((e.target as HTMLSelectElement).value)" :style="selectStyle">
-            <option v-for="v in VIGENCIA_TEMP_ONLY" :key="v" :value="v">{{ v }}</option>
+            <option v-for="v in vigMorteTempOpts" :key="v" :value="v">{{ v }}</option>
           </select>
           <p v-else :style="readonlyVal">{{ modelValue.morteTemp.vigencia || '—' }}</p>
         </div>
         <div>
           <span :style="labelStyle">Tempo de Contribuição</span>
-          <select v-if="isEditing" :value="modelValue.morteTemp.prazoPagamento" @change="(e) => updateCobertura('morteTemp', 'prazoPagamento', (e.target as HTMLSelectElement).value)" :style="selectStyle">
-            <option v-for="p in TEMPO_CONTRIB_OPTS" :key="p" :value="p">{{ p }}</option>
-          </select>
-          <p v-else :style="readonlyVal">{{ modelValue.morteTemp.prazoPagamento || '—' }}</p>
+          <p :style="readonlyVal">{{ modelValue.morteTemp.prazoPagamento || '—' }}</p>
         </div>
         <div>
           <span :style="labelStyle">Capital Segurado *</span>
@@ -407,13 +536,16 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         </div>
         <div>
           <span :style="labelStyle">Tempo de Contribuição</span>
-          <p :style="readonlyVal">{{ modelValue.prazoPagamentoGlobal || '—' }}</p>
+          <select v-if="isEditing" :value="modelValue.ipa.prazoPagamento" @change="(e) => updateCobertura('ipa', 'prazoPagamento', (e.target as HTMLSelectElement).value)" :style="selectStyle">
+            <option v-for="p in tempoContribIEA_IPA_IED_SAF" :key="p" :value="p">{{ p }}</option>
+          </select>
+          <p v-else :style="readonlyVal">{{ modelValue.ipa.prazoPagamento || '—' }}</p>
         </div>
         <div>
           <span :style="labelStyle">Capital Segurado *</span>
           <input v-if="isEditing" type="text" :value="modelValue.ipa.capitalSegurado" @input="(e) => onCapitalChange('ipa', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.ipa.capitalSegurado || '—' }}</p>
-          <p v-if="erroIPA" :style="erroStyle">⚠ {{ erroIPA }}</p>
+          <p v-if="erroIPA" :style="{ ...erroStyle, whiteSpace: 'pre-line' }">⚠ {{ erroIPA }}</p>
           <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 10.000.000</p>
         </div>
         <div>
@@ -471,13 +603,17 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         </div>
         <div>
           <span :style="labelStyle">Tempo de Contribuição</span>
-          <p :style="readonlyVal">{{ modelValue.prazoPagamentoGlobal || '—' }}</p>
+          <select v-if="isEditing" :value="modelValue.ied.prazoPagamento" @change="(e) => updateCobertura('ied', 'prazoPagamento', (e.target as HTMLSelectElement).value)" :style="selectStyle">
+            <option v-for="p in tempoContribIEA_IPA_IED_SAF" :key="p" :value="p">{{ p }}</option>
+          </select>
+          <p v-else :style="readonlyVal">{{ modelValue.ied.prazoPagamento || '—' }}</p>
         </div>
         <div>
           <span :style="labelStyle">Capital Segurado *</span>
           <input v-if="isEditing" type="text" :value="modelValue.ied.capitalSegurado" @input="(e) => onCapitalChange('ied', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.ied.capitalSegurado || '—' }}</p>
-          <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 1.000.000</p>
+          <p v-if="erroIED" :style="{ ...erroStyle, whiteSpace: 'pre-line' }">⚠ {{ erroIED }}</p>
+          <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 1.000.000</p>
         </div>
         <div>
           <span :style="labelStyle">Contribuição</span>
@@ -505,23 +641,17 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
       <div :style="grid4">
         <div>
           <span :style="labelStyle">Vigência</span>
-          <select v-if="isEditing" :value="modelValue.dg.vigencia" @change="(e) => updateCobertura('dg', 'vigencia', (e.target as HTMLSelectElement).value)" :style="selectStyle">
-            <option v-for="v in VIGENCIA_TEMP_ONLY" :key="v" :value="v">{{ v }}</option>
-          </select>
-          <p v-else :style="readonlyVal">{{ modelValue.dg.vigencia || '—' }}</p>
+          <p :style="readonlyVal">5 anos</p>
         </div>
         <div>
           <span :style="labelStyle">Tempo de Contribuição</span>
-          <select v-if="isEditing" :value="modelValue.dg.prazoPagamento" @change="(e) => updateCobertura('dg', 'prazoPagamento', (e.target as HTMLSelectElement).value)" :style="selectStyle">
-            <option v-for="p in TEMPO_CONTRIB_OPTS" :key="p" :value="p">{{ p }}</option>
-          </select>
-          <p v-else :style="readonlyVal">{{ modelValue.dg.prazoPagamento || '—' }}</p>
+          <p :style="readonlyVal">5 anos</p>
         </div>
         <div>
           <span :style="labelStyle">Capital Segurado *</span>
           <input v-if="isEditing" type="text" :value="modelValue.dg.capitalSegurado" @input="(e) => onCapitalChange('dg', (e.target as HTMLInputElement).value)" placeholder="R$ 0,00" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.dg.capitalSegurado || '—' }}</p>
-          <p v-if="erroDG" :style="erroStyle">⚠ {{ erroDG }}</p>
+          <p v-if="erroDG" :style="{ ...erroStyle, whiteSpace: 'pre-line' }">⚠ {{ erroDG }}</p>
           <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 50.000 | Máx: R$ 1.000.000</p>
         </div>
         <div>
@@ -560,7 +690,8 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <span :style="labelStyle">Capital Segurado (diária) *</span>
           <input v-if="isEditing" type="text" :value="modelValue.dih.capitalSegurado" @input="(e) => onCapitalChange('dih', (e.target as HTMLInputElement).value)" :placeholder="`R$ 100,00 – ${formatBRL(maxDIH)}`" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.dih.capitalSegurado || '—' }}</p>
-          <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 100 | Máx: R$ 1.000</p>
+          <p v-if="erroDIH" :style="{ ...erroStyle, whiteSpace: 'pre-line' }">⚠ {{ erroDIH }}</p>
+          <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 100 | Máx: R$ 1.000</p>
         </div>
         <div>
           <span :style="labelStyle">Contribuição</span>
@@ -610,7 +741,8 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
           <span :style="labelStyle">Capital Segurado (diária) *</span>
           <input v-if="isEditing" type="text" :value="modelValue.dit.capitalSegurado" @input="(e) => onCapitalChange('dit', (e.target as HTMLInputElement).value)" :placeholder="`R$ 1.000,00 – ${formatBRL(maxDIT)}`" :style="inputStyle" />
           <p v-else :style="readonlyVal">{{ modelValue.dit.capitalSegurado || '—' }}</p>
-          <p :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 1.000 | Máx: R$ 30.000.000</p>
+          <p v-if="erroDIT" :style="{ ...erroStyle, whiteSpace: 'pre-line' }">⚠ {{ erroDIT }}</p>
+          <p v-else :style="{ fontSize: '10px', color: 'oklch(55% 0.02 250)', marginTop: '2px' }">Mín: R$ 1.000 | Máx: R$ 30.000</p>
         </div>
         <div>
           <span :style="labelStyle">Contribuição</span>
@@ -680,7 +812,7 @@ const badgeIndisponivel = { fontSize: '11px', color: 'oklch(50% 0.15 30)', backg
         <div>
           <span :style="labelStyle">Tempo de Contribuição</span>
           <select v-if="isEditing" :value="modelValue.saf.prazoPagamento" @change="(e) => updateCobertura('saf', 'prazoPagamento', (e.target as HTMLSelectElement).value)" :style="selectStyle">
-            <option v-for="p in TEMPO_CONTRIB_SAF" :key="p" :value="p">{{ p }}</option>
+            <option v-for="p in tempoContribIEA_IPA_IED_SAF" :key="p" :value="p">{{ p }}</option>
           </select>
           <p v-else :style="readonlyVal">{{ modelValue.saf.prazoPagamento || '—' }}</p>
         </div>
