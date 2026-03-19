@@ -119,11 +119,6 @@
             <input v-if="isEditing" v-model="draftProponente.rendaMensal" class="inline-edit" />
             <p v-else class="field-value">{{ proponente.rendaMensal || '—' }}</p>
           </div>
-          <div>
-            <p class="field-label">Empresa</p>
-            <input v-if="isEditing" v-model="draftProponente.empresa" class="inline-edit" />
-            <p v-else class="field-value">{{ proponente.empresa || '—' }}</p>
-          </div>
         </template>
         <template v-else>
           <!-- 3ª coluna linha 3: Renda Mensal -->
@@ -131,12 +126,6 @@
             <p class="field-label">Renda Mensal <span style="color:#dc2626">*</span></p>
             <input v-if="isEditing" v-model="draftProponente.rendaMensal" class="inline-edit" />
             <p v-else class="field-value">{{ proponente.rendaMensal || '—' }}</p>
-          </div>
-          <!-- Linha 4 (sem OUTROS): Empresa -->
-          <div>
-            <p class="field-label">Empresa</p>
-            <input v-if="isEditing" v-model="draftProponente.empresa" class="inline-edit" />
-            <p v-else class="field-value">{{ proponente.empresa || '—' }}</p>
           </div>
         </template>
       </div>
