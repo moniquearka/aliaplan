@@ -31,7 +31,7 @@
       </template>
       <!-- Nova ordem:
         Linha 1: CPF | Nome Completo | Nome Social
-        Linha 2: Data de Nascimento | Gênero | Telefone
+        Linha 2: Data de Nascimento | Sexo | Telefone
         Linha 3 (sem OUTROS): E-mail | Profissão | Renda Mensal
         Linha 4 (sem OUTROS): Empresa
         Linha 3 (com OUTROS): E-mail | Profissão | Especificação da Profissão
@@ -61,7 +61,7 @@
           <p v-else class="field-value">{{ formatDate(proponente.dataNascimento) }}</p>
         </div>
         <div>
-          <p class="field-label">Gênero <span style="color:#dc2626">*</span></p>
+          <p class="field-label">Sexo <span style="color:#dc2626">*</span></p>
           <select v-if="isEditing" v-model="draftProponente.genero" class="inline-edit" style="cursor:pointer">
             <option value="">Selecione...</option>
             <option value="Feminino">Feminino</option>
@@ -502,7 +502,7 @@ const handleSave = () => {
   if (!draftProponente.value.telefone?.trim()) erros.push('Telefone')
   if (!draftProponente.value.email?.trim()) erros.push('E-mail')
   if (!draftProponente.value.rendaMensal?.trim()) erros.push('Renda Mensal')
-  if (!draftProponente.value.genero?.trim()) erros.push('Gênero')
+  if (!draftProponente.value.genero?.trim()) erros.push('Sexo')
   if (!draftProponente.value.ocupacao?.trim()) erros.push('Profissão')
   if (draftProponente.value.ocupacao === 'OUTROS (ESPECIFICAR)' && !draftProponente.value.especificacaoOcupacao?.trim()) erros.push('Especificação da Ocupação')
   if (erros.length > 0) {
@@ -549,7 +549,7 @@ const handleContinuar = () => {
     if (!p.telefone?.trim()) erros.push('Telefone')
     if (!p.email?.trim()) erros.push('E-mail')
     if (!p.rendaMensal?.trim()) erros.push('Renda Mensal')
-    if (!p.genero?.trim()) erros.push('Gênero')
+    if (!p.genero?.trim()) erros.push('Sexo')
     if (!p.ocupacao?.trim()) erros.push('Profissão')
     validationErrors.value = erros
     return
